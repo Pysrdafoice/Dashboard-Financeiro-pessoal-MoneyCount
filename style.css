@@ -554,6 +554,36 @@ select:focus {
   }
 }
 
+/* ---- Exportar / Backup de Dados ---- */
+.backup-botoes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.backup-botoes .btn-secondary {
+  width: 100%;
+  text-align: center;
+}
+
+.backup-status {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  background-color: var(--table-header-bg);
+  color: var(--text-main);
+}
+
+.backup-status.erro {
+  background-color: #fef2f2;
+  color: var(--danger);
+}
+
+body.dark-mode .backup-status.erro {
+  background-color: #3f1d1d;
+}
+
 /* Dica de clique no gráfico de pizza */
 .chart-hint {
   font-size: 0.8rem;

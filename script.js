@@ -61,6 +61,13 @@ const modalLimitePercentual = document.getElementById(
 const modalLimiteBarra = document.getElementById('modal-limite-barra');
 const modalLimiteAviso = document.getElementById('modal-limite-aviso');
 
+// Elementos de Exportar/Backup
+const btnExportarBackup = document.getElementById('btn-exportar-backup');
+const btnImportarBackup = document.getElementById('btn-importar-backup');
+const inputImportarBackup = document.getElementById('input-importar-backup');
+const btnExportarCsv = document.getElementById('btn-exportar-csv');
+const backupStatus = document.getElementById('backup-status');
+
 // Elemento do botão de tema
 const btnTema = document.getElementById('btn-tema');
 
@@ -110,6 +117,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') fecharModal();
   });
+
+  btnExportarBackup.addEventListener('click', exportarBackup);
+  btnImportarBackup.addEventListener('click', () => inputImportarBackup.click());
+  inputImportarBackup.addEventListener('change', importarBackup);
+  btnExportarCsv.addEventListener('click', exportarCsv);
 });
 
 // Funções de Lógica e Manipulação de Dados
@@ -667,6 +679,122 @@ function carregarDados() {
 
 function formatarMoeda(valor) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+// ---- Exportar / Backup de Dados ----
+
+function mostrarStatusBackup(mensagem, ehErro = false) {
+  backupStatus.textContent = mensagem;
+  backupStatus.classList.remove('hidden', 'erro');
+  if (ehErro) backupStatus.classList.add('erro');
+
+  // Some sozinho depois de alguns segundos, sem precisar de clique
+  clearTimeout(mostrarStatusBackup._timer);
+  mostrarStatusBackup._timer = setTimeout(() => {
+    backupStatus.classList.add('hidden');
+  }, 5000);
+}
+
+function baixarArquivo(conteudo, nomeArquivo, tipoMime) {
+  const blob = new Blob([conteudo], { type: tipoMime });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = nomeArquivo;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function exportarBackup() {
+  try {
+    const dataAtual = new Date().toISOString().slice(0, 10);
+    const conteudo = JSON.stringify(estado, null, 2);
+    baixarArquivo(conteudo, `fuelcount-backup-${dataAtual}.json`, 'application/json');
+    mostrarStatusBackup('Backup exportado com sucesso!');
+  } catch (e) {
+    console.error('Erro ao exportar backup.', e);
+    mostrarStatusBackup('Não foi possível gerar o backup.', true);
+  }
+}
+
+function importarBackup(e) {
+  const arquivo = e.target.files[0];
+  if (!arquivo) return;
+
+  const leitor = new FileReader();
+  leitor.onload = (evento) => {
+    try {
+      const dados = JSON.parse(evento.target.result);
+
+      // Validação básica da estrutura antes de sobrescrever os dados atuais
+      const valido =
+        dados &&
+        typeof dados === 'object' &&
+        (dados.salario === undefined || typeof dados.salario === 'number') &&
+        (dados.gastos === undefined || Array.isArray(dados.gastos)) &&
+        (dados.historico === undefined || Array.isArray(dados.historico));
+
+      if (!valido) {
+        mostrarStatusBackup('Arquivo inválido: não parece ser um backup do FuelCount.', true);
+        return;
+      }
+
+      const confirmar = confirm(
+        'Isso vai substituir todos os dados atuais pelo conteúdo do backup. Deseja continuar?',
+      );
+      if (!confirmar) return;
+
+      estado = {
+        salario: typeof dados.salario === 'number' ? dados.salario : 0,
+        gastos: Array.isArray(dados.gastos) ? dados.gastos : [],
+        historico: Array.isArray(dados.historico) ? dados.historico : [],
+        limites: dados.limites && typeof dados.limites === 'object' ? dados.limites : {},
+      };
+
+      salvarDados();
+      atualizarInterface();
+      mostrarStatusBackup('Backup restaurado com sucesso!');
+    } catch (err) {
+      console.error('Erro ao importar backup.', err);
+      mostrarStatusBackup('Não foi possível ler esse arquivo. Verifique se é um JSON válido.', true);
+    } finally {
+      inputImportarBackup.value = ''; // permite selecionar o mesmo arquivo de novo, se precisar
+    }
+  };
+  leitor.readAsText(arquivo);
+}
+
+function exportarCsv() {
+  if (estado.gastos.length === 0) {
+    mostrarStatusBackup('Não há gastos para exportar.', true);
+    return;
+  }
+
+  // Escapa campos que contenham vírgula, aspas ou quebra de linha, seguindo o padrão CSV
+  const escapeCsv = (valor) => {
+    const texto = String(valor);
+    if (/[",\n]/.test(texto)) {
+      return `"${texto.replace(/"/g, '""')}"`;
+    }
+    return texto;
+  };
+
+  const cabecalho = ['Descrição', 'Categoria', 'Valor (R$)'];
+  const linhas = estado.gastos.map((g) => [
+    escapeCsv(g.descricao),
+    escapeCsv(g.categoria),
+    g.valor.toFixed(2).replace('.', ','),
+  ]);
+
+  // BOM (\uFEFF) garante acentuação correta ao abrir no Excel
+  const conteudoCsv =
+    '\uFEFF' + [cabecalho, ...linhas].map((linha) => linha.join(';')).join('\n');
+
+  const dataAtual = new Date().toISOString().slice(0, 10);
+  baixarArquivo(conteudoCsv, `fuelcount-extrato-${dataAtual}.csv`, 'text/csv;charset=utf-8;');
+  mostrarStatusBackup('Extrato exportado em CSV!');
 }
 
 // ---- Carrossel de Gráficos (Pizza/Doughnut / Histórico) ----

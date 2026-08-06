@@ -72,6 +72,19 @@
             <ul id="lista-limites" class="lista-limites"></ul>
         </section>
 
+        <!-- Exportar / Backup de Dados -->
+        <section class="card">
+            <h2>Exportar &amp; Backup</h2>
+            <p class="chart-hint" style="margin-bottom: 14px;">Salve uma cópia dos seus dados ou restaure um backup anterior.</p>
+            <div class="backup-botoes">
+                <button id="btn-exportar-backup" class="btn-secondary">⬇️ Baixar Backup (JSON)</button>
+                <button id="btn-importar-backup" class="btn-secondary">⬆️ Restaurar Backup</button>
+                <button id="btn-exportar-csv" class="btn-secondary">📄 Exportar Extrato (CSV)</button>
+            </div>
+            <input type="file" id="input-importar-backup" accept="application/json" hidden>
+            <p id="backup-status" class="backup-status hidden"></p>
+        </section>
+
         <!-- Cards de Resumo Financeiro -->
         <section class="resumo-grid">
             <div class="card resumo-item">
