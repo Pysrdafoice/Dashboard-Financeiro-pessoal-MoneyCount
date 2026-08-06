@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FuelCount - Planilha de Orçamento Interativa</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js para os gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="app-header">
+        <button id="btn-tema" class="btn-tema" aria-label="Alternar tema claro/escuro" title="Alternar tema">🌙</button>
+
+        <div class="app-header__content">
+            <span class="app-header__badge">Dashboard financeiro</span>
+            <h1>MoneyCount <span>📊</span></h1>
+            <p>Gerencie suas finanças, acompanhe categorias e visualize seu histórico.</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Seção de Entrada e Resumo -->
+        <section class="card config-card">
+            <h2>Configuração do Mês</h2>
+            <div class="input-group">
+                <label for="input-salario">Salário Bruto / Renda Base (R$):</label>
+                <input type="number" id="input-salario" placeholder="Ex: 4500.00" step="0.01" min="0">
+            </div>
+
+            <h3>Adicionar Gasto</h3>
+            <form id="form-gasto" class="gasto-form">
+                <input type="text" id="desc-gasto" placeholder="Descrição (Ex: Aluguel, Supermercado)" required>
+                <input type="number" id="valor-gasto" placeholder="Valor (R$)" step="0.01" min="0.01" required>
+                <select id="cat-gasto" required>
+                    <option value="" disabled selected>Selecione a Categoria</option>
+                    <option value="Moradia">Moradia</option>
+                    <option value="Alimentação">Alimentação</option>
+                    <option value="Transporte">Transporte</option>
+                    <option value="Lazer">Lazer</option>
+                    <option value="Saúde">Saúde</option>
+                    <option value="Estética">Estética</option>
+                    <option value="Assinaturas">Assinaturas</option>
+                    <option value="Investimentos">Investimentos</option>
+                    <option value="Educação">Educação</option>
+                    <option value="Outros">Outros</option>
+                </select>
+                <button type="submit" class="btn-primary">Adicionar</button>
+            </form>
+
+            <h3 class="limites-titulo">Limites por Categoria</h3>
+            <form id="form-limite" class="limite-form">
+                <select id="cat-limite" required>
+                    <option value="" disabled selected>Categoria</option>
+                    <option value="Moradia">Moradia</option>
+                    <option value="Alimentação">Alimentação</option>
+                    <option value="Transporte">Transporte</option>
+                    <option value="Lazer">Lazer</option>
+                    <option value="Saúde">Saúde</option>
+                    <option value="Estética">Estética</option>
+                    <option value="Assinaturas">Assinaturas</option>
+                    <option value="Investimentos">Investimentos</option>
+                    <option value="Educação">Educação</option>
+                    <option value="Outros">Outros</option>
+                </select>
+                <input type="number" id="valor-limite" placeholder="Limite mensal (R$)" step="0.01" min="0.01" required>
+                <button type="submit" class="btn-primary">Definir</button>
+            </form>
+            <ul id="lista-limites" class="lista-limites"></ul>
+        </section>
+
+        <!-- Cards de Resumo Financeiro -->
+        <section class="resumo-grid">
+            <div class="card resumo-item">
+                <h3>Renda Total</h3>
+                <p id="res-renda">R$ 0,00</p>
+            </div>
+            <div class="card resumo-item">
+                <h3>Gastos Totais</h3>
+                <p id="res-gastos" class="text-danger">R$ 0,00</p>
+            </div>
+            <div class="card resumo-item">
+                <h3>Saldo Restante</h3>
+                <p id="res-saldo" class="text-success">R$ 0,00</p>
+            </div>
+        </section>
+
+        <!-- Extrato de Gastos -->
+        <section class="card">
+            <h2>Gastos do Mês</h2>
+            <div id="lista-transacoes" class="transacoes-lista"></div>
+        </section>
+
+        <!-- Carrossel de Gráficos: Distribuição por Categoria + Evolução Histórica -->
+        <section class="card carrossel-card">
+            <div class="carrossel-header">
+                <h2 id="carrossel-titulo">Distribuição por Categoria</h2>
+                <button id="btn-fechar-mes" class="btn-secondary btn-fechar-compacto">Fechar Mês</button>
+            </div>
+
+            <div class="carrossel-wrap">
+                <button id="carrossel-prev" class="carrossel-seta" aria-label="Gráfico anterior">&#10094;</button>
+
+                <div class="carrossel-viewport">
+                    <div class="carrossel-slide ativo" data-slide="0">
+                        <p class="chart-hint">Toque em uma fatia para ver o detalhamento</p>
+                        <div class="pizza-chart-wrap">
+                            <canvas id="pieChart"></canvas>
+                        </div>
+                        <div id="legenda-pizza" class="legenda-pizza"></div>
+                    </div>
+
+                    <div class="carrossel-slide" data-slide="1">
+                        <div class="history-scroll">
+                            <div class="historico-chart-wrap">
+                                <canvas id="lineChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="carrossel-next" class="carrossel-seta" aria-label="Próximo gráfico">&#10095;</button>
+            </div>
+
+            <div id="carrossel-dots" class="carrossel-dots"></div>
+        </section>
+    </main>
+
+    <!-- Modal de Detalhamento por Categoria -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 id="modal-titulo">Categoria</h2>
+                <button id="modal-fechar" class="btn-fechar-modal" aria-label="Fechar">&times;</button>
+            </div>
+            <div class="modal-resumo">
+                <span>Total gasto: <strong id="modal-total">R$ 0,00</strong></span>
+                <span id="modal-percentual"></span>
+            </div>
+            <div id="modal-limite-wrap" class="modal-limite-wrap hidden">
+                <div class="limite-barra-info">
+                    <span id="modal-limite-texto">Limite: R$ 0,00</span>
+                    <span id="modal-limite-percentual">0%</span>
+                </div>
+                <div class="limite-barra-fundo">
+                    <div id="modal-limite-barra" class="limite-barra-preenchida"></div>
+                </div>
+                <p id="modal-limite-aviso" class="limite-aviso hidden"></p>
+            </div>
+            <div class="modal-chart-wrap">
+                <canvas id="detalheChart"></canvas>
+            </div>
+            <div class="modal-lista">
+                <ul id="modal-lista-itens"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

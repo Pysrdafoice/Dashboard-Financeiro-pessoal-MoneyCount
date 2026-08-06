@@ -1,0 +1,801 @@
+// Estado da Aplicação
+let estado = {
+  salario: 0,
+  gastos: [],
+  historico: [],
+  limites: {}, // { 'Categoria': valorLimiteMensal }
+};
+
+// Mapa de cores fixo por categoria (mantém consistência visual mês a mês)
+// Paleta alinhada à identidade visual: verde petróleo, âmbar e tons neutros elegantes
+const CORES_CATEGORIA = {
+  Moradia: '#0f766e', // Verde petróleo (cor de marca)
+  Alimentação: '#059669', // Verde esmeralda
+  Transporte: '#0891b2', // Azul petróleo claro
+  Lazer: '#f59e0b', // Âmbar (accent)
+  Saúde: '#e11d48', // Rosa-vermelho (mesma família do "danger")
+  Estética: '#c026d3', // Magenta suave
+  Assinaturas: '#65a30d', // Verde oliva
+  Investimentos: '#115e59', // Verde petróleo escuro
+  Educação: '#7c6f95', // Roxo acinzentado, elegante e discreto
+  Outros: '#94a3b8', // Cinza neutro
+};
+const COR_PADRAO = '#cbd5e1';
+
+// Instâncias dos Gráficos
+let pieChartInstance = null;
+let lineChartInstance = null;
+let detalheChartInstance = null;
+
+// Elementos do DOM
+const inputSalario = document.getElementById('input-salario');
+const formGasto = document.getElementById('form-gasto');
+const descGasto = document.getElementById('desc-gasto');
+const valorGasto = document.getElementById('valor-gasto');
+const catGasto = document.getElementById('cat-gasto');
+const listaTransacoes = document.getElementById('lista-transacoes');
+
+const resRenda = document.getElementById('res-renda');
+const resGastos = document.getElementById('res-gastos');
+const resSaldo = document.getElementById('res-saldo');
+const btnFecharMes = document.getElementById('btn-fechar-mes');
+
+// Elementos de Limites por Categoria
+const formLimite = document.getElementById('form-limite');
+const catLimite = document.getElementById('cat-limite');
+const valorLimite = document.getElementById('valor-limite');
+const listaLimites = document.getElementById('lista-limites');
+
+// Elementos do Modal de Detalhamento
+const modalOverlay = document.getElementById('modal-overlay');
+const modalTitulo = document.getElementById('modal-titulo');
+const modalTotal = document.getElementById('modal-total');
+const modalPercentual = document.getElementById('modal-percentual');
+const modalFechar = document.getElementById('modal-fechar');
+const modalListaItens = document.getElementById('modal-lista-itens');
+const modalLimiteWrap = document.getElementById('modal-limite-wrap');
+const modalLimiteTexto = document.getElementById('modal-limite-texto');
+const modalLimitePercentual = document.getElementById(
+  'modal-limite-percentual',
+);
+const modalLimiteBarra = document.getElementById('modal-limite-barra');
+const modalLimiteAviso = document.getElementById('modal-limite-aviso');
+
+// Elemento do botão de tema
+const btnTema = document.getElementById('btn-tema');
+
+// Elementos do Carrossel de Gráficos
+const carrosselPrev = document.getElementById('carrossel-prev');
+const carrosselNext = document.getElementById('carrossel-next');
+const carrosselDots = document.getElementById('carrossel-dots');
+const carrosselTitulo = document.getElementById('carrossel-titulo');
+const carrosselSlides = document.querySelectorAll('.carrossel-slide');
+const legendaPizza = document.getElementById('legenda-pizza');
+
+const TITULOS_SLIDES = ['Distribuição por Categoria', 'Evolução Histórica'];
+let slideAtual = 0;
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', () => {
+  aplicarTemaSalvo();
+  carregarDados();
+  atualizarInterface();
+  inicializarCarrossel();
+
+  btnTema.addEventListener('click', alternarTema);
+
+  inputSalario.addEventListener('input', (e) => {
+    const valor = parseFloat(e.target.value);
+    estado.salario = !isNaN(valor) && valor >= 0 ? valor : 0;
+    salvarDados();
+    atualizarInterface();
+  });
+
+  formGasto.addEventListener('submit', (e) => {
+    e.preventDefault();
+    adicionarGasto();
+  });
+
+  btnFecharMes.addEventListener('click', fecharMes);
+
+  formLimite.addEventListener('submit', (e) => {
+    e.preventDefault();
+    definirLimite();
+  });
+
+  modalFechar.addEventListener('click', fecharModal);
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) fecharModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') fecharModal();
+  });
+});
+
+// Funções de Lógica e Manipulação de Dados
+function adicionarGasto() {
+  const valor = parseFloat(valorGasto.value);
+  const descricao = descGasto.value.trim();
+
+  if (!descricao) {
+    alert('Digite uma descrição para o gasto.');
+    return;
+  }
+  if (isNaN(valor) || valor <= 0) {
+    alert('Digite um valor válido, maior que zero.');
+    return;
+  }
+  if (!catGasto.value) {
+    alert('Selecione uma categoria.');
+    return;
+  }
+
+  const novoGasto = {
+    id: crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random()}`,
+    descricao: descricao,
+    categoria: catGasto.value,
+    valor: valor,
+  };
+
+  estado.gastos.push(novoGasto);
+  salvarDados();
+  atualizarInterface();
+  formGasto.reset();
+}
+
+function removerGasto(id) {
+  estado.gastos = estado.gastos.filter((g) => g.id !== id);
+  salvarDados();
+  atualizarInterface();
+
+  // Se o modal de detalhamento estiver aberto, atualiza ou fecha se a categoria ficou vazia
+  if (!modalOverlay.classList.contains('hidden') && categoriaAtualModal) {
+    const restantes = estado.gastos.filter(
+      (g) => g.categoria === categoriaAtualModal,
+    );
+    if (restantes.length === 0) {
+      fecharModal();
+    } else {
+      abrirModalCategoria(categoriaAtualModal);
+    }
+  }
+}
+
+function calcularTotais() {
+  const totalGastos = estado.gastos.reduce((acc, curr) => acc + curr.valor, 0);
+  const saldoRestante = estado.salario - totalGastos;
+  return { totalGastos, saldoRestante };
+}
+
+function atualizarInterface() {
+  inputSalario.value = estado.salario ? estado.salario : '';
+  const { totalGastos, saldoRestante } = calcularTotais();
+
+  resRenda.textContent = formatarMoeda(estado.salario);
+  resGastos.textContent = formatarMoeda(totalGastos);
+  resSaldo.textContent = formatarMoeda(saldoRestante);
+
+  resSaldo.className = saldoRestante >= 0 ? 'text-success' : 'text-danger';
+
+  const cardSaldo = resSaldo.closest('.resumo-item');
+  if (cardSaldo) {
+    cardSaldo.classList.toggle('card-alerta', saldoRestante < 0);
+  }
+
+  renderizarExtrato();
+  renderizarGraficoPizza();
+  renderizarGraficoLinha();
+  renderizarListaLimites();
+}
+
+// ---- Limites por Categoria ----
+
+function definirLimite() {
+  const categoria = catLimite.value;
+  const valor = parseFloat(valorLimite.value);
+
+  if (!categoria) {
+    alert('Selecione uma categoria.');
+    return;
+  }
+  if (isNaN(valor) || valor <= 0) {
+    alert('Digite um limite válido, maior que zero.');
+    return;
+  }
+
+  estado.limites[categoria] = valor;
+  salvarDados();
+  renderizarListaLimites();
+  formLimite.reset();
+}
+
+function removerLimite(categoria) {
+  delete estado.limites[categoria];
+  salvarDados();
+  renderizarListaLimites();
+
+  // Atualiza o modal se estiver aberto na mesma categoria
+  if (categoriaAtualModal === categoria) {
+    abrirModalCategoria(categoria);
+  }
+}
+
+function renderizarListaLimites() {
+  listaLimites.innerHTML = '';
+
+  const categorias = Object.keys(estado.limites);
+  if (categorias.length === 0) {
+    listaLimites.innerHTML = `<li class="limite-vazio">Nenhum limite definido ainda.</li>`;
+    return;
+  }
+
+  categorias.forEach((categoria) => {
+    const limite = estado.limites[categoria];
+    const gastoAtual = estado.gastos
+      .filter((g) => g.categoria === categoria)
+      .reduce((acc, g) => acc + g.valor, 0);
+    const percentual = Math.min((gastoAtual / limite) * 100, 999);
+
+    const percClasse =
+      percentual >= 100
+        ? 'limite-estourou'
+        : percentual >= 70
+          ? 'limite-atencao'
+          : '';
+
+    const li = document.createElement('li');
+    li.className = `item-limite ${percClasse}`.trim();
+    li.innerHTML = `
+            <span class="item-limite-nome">${escapeHTML(categoria)}</span>
+            <span class="item-limite-valores">${formatarMoeda(gastoAtual)} / ${formatarMoeda(limite)}</span>
+            <button class="btn-remover-limite" title="Remover limite" aria-label="Remover limite de ${escapeHTML(categoria)}">&times;</button>
+        `;
+    li.querySelector('.btn-remover-limite').addEventListener('click', () =>
+      removerLimite(categoria),
+    );
+    listaLimites.appendChild(li);
+  });
+}
+
+// Escapa HTML para evitar XSS ao inserir texto do usuário via innerHTML
+function escapeHTML(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function renderizarExtrato() {
+  listaTransacoes.innerHTML = '';
+
+  if (estado.gastos.length === 0) {
+    listaTransacoes.innerHTML = `
+      <div class="transacao-vazio">Nenhum gasto cadastrado.</div>
+    `;
+    return;
+  }
+
+  estado.gastos.forEach((gasto) => {
+    const card = document.createElement('article');
+    const icone = pegarIconeCategoria(gasto.categoria);
+    card.className = 'transacao-card';
+    card.innerHTML = `
+      <div class="transacao-card__icon" aria-hidden="true">${icone}</div>
+      <div class="transacao-card__info">
+        <strong>${escapeHTML(gasto.descricao)}</strong>
+        <span>${escapeHTML(gasto.categoria)}</span>
+      </div>
+      <div class="transacao-card__valor">
+        <strong>${formatarMoeda(gasto.valor)}</strong>
+        <button class="btn-secondary btn-remover-transacao" title="Excluir gasto" aria-label="Excluir gasto de ${escapeHTML(gasto.descricao)}">Excluir</button>
+      </div>
+    `;
+
+    card.querySelector('.btn-remover-transacao').addEventListener('click', () => {
+      removerGasto(gasto.id);
+    });
+
+    listaTransacoes.appendChild(card);
+  });
+}
+
+function pegarIconeCategoria(categoria) {
+  const icones = {
+    Moradia: '🏠',
+    Alimentação: '🛒',
+    Transporte: '🚗',
+    Lazer: '🎉',
+    Saúde: '🩺',
+    Estética: '✨',
+    Assinaturas: '📺',
+    Investimentos: '📈',
+    Educação: '🎓',
+    Outros: '💼',
+  };
+
+  return icones[categoria] || '🧾';
+}
+
+// Renderização de Gráficos com Chart.js
+function renderizarGraficoPizza() {
+  const ctx = document.getElementById('pieChart').getContext('2d');
+
+  const categorias = {};
+  estado.gastos.forEach((g) => {
+    categorias[g.categoria] = (categorias[g.categoria] || 0) + g.valor;
+  });
+
+  const labels = Object.keys(categorias);
+  const data = Object.values(categorias);
+  const { totalGastos } = calcularTotais();
+
+  const cores = labels.length
+    ? labels.map((l) => CORES_CATEGORIA[l] || COR_PADRAO)
+    : ['#e2e8f0'];
+
+  const chartData = {
+    labels: labels.length ? labels : ['Sem dados'],
+    datasets: [
+      {
+        data: data.length ? data : [1],
+        backgroundColor: cores,
+        borderWidth: 0,
+      },
+    ],
+  };
+
+  renderizarLegendaPizza(labels, cores, data, totalGastos);
+
+  if (pieChartInstance) {
+    pieChartInstance.data.labels = chartData.labels;
+    pieChartInstance.data.datasets = chartData.datasets;
+    pieChartInstance.update();
+    return;
+  }
+
+  // Plugin simples para desenhar o total gasto no centro do doughnut
+  // (indicador compacto — evita depender só da legenda pra ver o total)
+  const centroTextoPlugin = {
+    id: 'centroTexto',
+    afterDraw: (chart) => {
+      const { ctx, chartArea } = chart;
+      if (!chartArea) return;
+      const centroX = (chartArea.left + chartArea.right) / 2;
+      const centroY = (chartArea.top + chartArea.bottom) / 2;
+
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = corTextoGrafico();
+      ctx.font = '700 16px Inter, sans-serif';
+      ctx.fillText(formatarMoeda(calcularTotais().totalGastos), centroX, centroY - 5);
+
+      ctx.font = '400 11px Inter, sans-serif';
+      ctx.fillStyle = document.body.classList.contains('dark-mode') ? '#94a3b8' : '#64748b';
+      ctx.fillText('gasto total', centroX, centroY + 14);
+      ctx.restore();
+    },
+  };
+
+  pieChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: chartData,
+    plugins: [centroTextoPlugin],
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: {
+        legend: { display: false }, // legenda customizada em HTML abaixo do gráfico
+      },
+      // Clique numa fatia abre o detalhamento da categoria
+      onClick: (evt, elements) => {
+        if (!elements.length) return;
+        const index = elements[0].index;
+        const categoriaClicada = pieChartInstance.data.labels[index];
+        if (categoriaClicada && categoriaClicada !== 'Sem dados') {
+          abrirModalCategoria(categoriaClicada);
+        }
+      },
+      onHover: (evt, elements) => {
+        evt.native.target.style.cursor = elements.length
+          ? 'pointer'
+          : 'default';
+      },
+    },
+  });
+}
+
+// Constrói a legenda em grid (HTML), clicável para abrir o detalhamento da categoria
+function renderizarLegendaPizza(labels, cores, data, totalGastos) {
+  legendaPizza.innerHTML = '';
+
+  if (labels.length === 0) {
+    legendaPizza.innerHTML = `<p class="limite-vazio">Adicione gastos para ver a distribuição.</p>`;
+    return;
+  }
+
+  labels.forEach((categoria, i) => {
+    const valor = data[i];
+    const percentual = totalGastos > 0 ? ((valor / totalGastos) * 100).toFixed(0) : 0;
+
+    const item = document.createElement('div');
+    item.className = 'legenda-item';
+    item.innerHTML = `
+      <span class="legenda-swatch" style="background-color: ${cores[i]};"></span>
+      <span class="legenda-texto">${escapeHTML(categoria)}</span>
+      <span class="legenda-valor">${percentual}%</span>
+    `;
+    item.addEventListener('click', () => abrirModalCategoria(categoria));
+    legendaPizza.appendChild(item);
+  });
+}
+
+function renderizarGraficoLinha() {
+  const ctx = document.getElementById('lineChart').getContext('2d');
+
+  const labels = estado.historico.map((h) => h.mes);
+  const dadosSalario = estado.historico.map((h) => h.salario);
+  const dadosGastos = estado.historico.map((h) => h.totalGastos);
+
+  const chartData = {
+    labels: labels.length ? labels : ['Mês Atual (Pendente)'],
+    datasets: [
+      {
+        label: 'Orçamento/Salário',
+        data: labels.length ? dadosSalario : [estado.salario],
+        backgroundColor: '#0f766e',
+        borderRadius: 4,
+      },
+      {
+        label: 'Gastos Totais',
+        data: labels.length ? dadosGastos : [calcularTotais().totalGastos],
+        backgroundColor: '#e11d48',
+        borderRadius: 4,
+      },
+    ],
+  };
+
+  if (lineChartInstance) {
+    lineChartInstance.data.labels = chartData.labels;
+    lineChartInstance.data.datasets = chartData.datasets;
+    lineChartInstance.update();
+    return;
+  }
+
+  lineChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: chartData,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: corTextoGrafico(), boxWidth: 12, font: { size: 11 } },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: corTextoGrafico(), font: { size: 11 } },
+          grid: { display: false },
+        },
+        y: {
+          ticks: { color: corTextoGrafico(), font: { size: 11 } },
+          grid: { color: corGradeGrafico() },
+        },
+      },
+    },
+  });
+}
+
+// ---- Drill-down por Categoria (Modal) ----
+
+let categoriaAtualModal = null;
+
+function abrirModalCategoria(categoria) {
+  categoriaAtualModal = categoria;
+
+  const itensCategoria = estado.gastos
+    .filter((g) => g.categoria === categoria)
+    .sort((a, b) => b.valor - a.valor);
+
+  const totalCategoria = itensCategoria.reduce((acc, g) => acc + g.valor, 0);
+  const { totalGastos } = calcularTotais();
+  const percentual =
+    totalGastos > 0 ? ((totalCategoria / totalGastos) * 100).toFixed(1) : '0.0';
+
+  modalTitulo.textContent = categoria;
+  modalTotal.textContent = formatarMoeda(totalCategoria);
+  modalPercentual.textContent = `(${percentual}% dos gastos totais)`;
+
+  // Barra de progresso do limite (se houver limite definido para a categoria)
+  const limite = estado.limites[categoria];
+  if (limite && limite > 0) {
+    const percLimite = (totalCategoria / limite) * 100;
+    const percLimiteExibido = Math.min(percLimite, 999);
+
+    modalLimiteWrap.classList.remove('hidden');
+    modalLimiteTexto.textContent = `Limite: ${formatarMoeda(limite)}`;
+    modalLimitePercentual.textContent = `${percLimiteExibido.toFixed(0)}%`;
+    modalLimiteBarra.style.width = `${Math.min(percLimite, 100)}%`;
+
+    // Cores: verde até 70%, amarelo até 100%, vermelho acima de 100%
+    modalLimiteBarra.classList.remove(
+      'barra-ok',
+      'barra-atencao',
+      'barra-estourou',
+    );
+    if (percLimite >= 100) {
+      modalLimiteBarra.classList.add('barra-estourou');
+    } else if (percLimite >= 70) {
+      modalLimiteBarra.classList.add('barra-atencao');
+    } else {
+      modalLimiteBarra.classList.add('barra-ok');
+    }
+
+    if (percLimite >= 100) {
+      modalLimiteAviso.textContent = `Você ultrapassou o limite em ${formatarMoeda(totalCategoria - limite)}.`;
+      modalLimiteAviso.classList.remove('hidden');
+    } else if (percLimite >= 70) {
+      modalLimiteAviso.textContent = `Atenção: você já usou ${percLimite.toFixed(0)}% do limite desta categoria.`;
+      modalLimiteAviso.classList.remove('hidden');
+    } else {
+      modalLimiteAviso.classList.add('hidden');
+    }
+  } else {
+    modalLimiteWrap.classList.add('hidden');
+  }
+
+  // Lista de itens da categoria
+  modalListaItens.innerHTML = '';
+  itensCategoria.forEach((g) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span>${escapeHTML(g.descricao)}</span><strong>${formatarMoeda(g.valor)}</strong>`;
+    modalListaItens.appendChild(li);
+  });
+
+  // Importante: o overlay precisa ficar visível ANTES de criar o gráfico.
+  // Criar um gráfico do Chart.js num canvas ainda com display:none faz o
+  // cálculo de tamanho vir como 0x0 (mesma causa-raiz do bug no carrossel).
+  modalOverlay.classList.remove('hidden');
+  renderizarGraficoDetalhe(itensCategoria, categoria);
+}
+
+function fecharModal() {
+  modalOverlay.classList.add('hidden');
+  categoriaAtualModal = null;
+}
+
+function renderizarGraficoDetalhe(itens, categoria) {
+  const ctx = document.getElementById('detalheChart').getContext('2d');
+
+  const labels = itens.map((g) => g.descricao);
+  const data = itens.map((g) => g.valor);
+  const cor = CORES_CATEGORIA[categoria] || COR_PADRAO;
+
+  const chartData = {
+    labels: labels.length ? labels : ['Sem gastos'],
+    datasets: [
+      {
+        label: 'Valor gasto',
+        data: data.length ? data : [0],
+        backgroundColor: cor,
+      },
+    ],
+  };
+
+  if (detalheChartInstance) {
+    detalheChartInstance.destroy();
+  }
+
+  detalheChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: chartData,
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: corTextoGrafico(),
+            callback: (value) => formatarMoeda(value),
+          },
+          grid: { color: corGradeGrafico() },
+        },
+        y: {
+          ticks: { color: corTextoGrafico() },
+          grid: { color: corGradeGrafico() },
+        },
+      },
+    },
+  });
+}
+
+function fecharMes() {
+  const { totalGastos } = calcularTotais();
+  const dataAtual = new Date();
+  const nomeMes = `${dataAtual.getMonth() + 1}/${dataAtual.getFullYear()}`;
+
+  estado.historico = estado.historico.filter((h) => h.mes !== nomeMes);
+
+  estado.historico.push({
+    mes: nomeMes,
+    salario: estado.salario,
+    totalGastos: totalGastos,
+  });
+
+  salvarDados();
+  atualizarInterface();
+  alert('Mês salvo com sucesso no histórico!');
+}
+
+// Persistência local (LocalStorage) com tratamento de erro
+function salvarDados() {
+  try {
+    localStorage.setItem('orcamento_estado', JSON.stringify(estado));
+  } catch (e) {
+    console.error('Não foi possível salvar os dados no localStorage.', e);
+  }
+}
+
+function carregarDados() {
+  try {
+    const salvo = localStorage.getItem('orcamento_estado');
+    if (salvo) {
+      const parsed = JSON.parse(salvo);
+      estado = {
+        salario: typeof parsed.salario === 'number' ? parsed.salario : 0,
+        gastos: Array.isArray(parsed.gastos) ? parsed.gastos : [],
+        historico: Array.isArray(parsed.historico) ? parsed.historico : [],
+        limites:
+          parsed.limites && typeof parsed.limites === 'object'
+            ? parsed.limites
+            : {},
+      };
+    }
+  } catch (e) {
+    console.error('Dados corrompidos no localStorage, iniciando do zero.', e);
+    estado = { salario: 0, gastos: [], historico: [], limites: {} };
+  }
+}
+
+function formatarMoeda(valor) {
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+// ---- Carrossel de Gráficos (Pizza/Doughnut / Histórico) ----
+function inicializarCarrossel() {
+  TITULOS_SLIDES.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.className = 'carrossel-dot' + (i === 0 ? ' ativo' : '');
+    dot.setAttribute('aria-label', `Ir para gráfico ${i + 1}`);
+    dot.addEventListener('click', () => irParaSlide(i));
+    carrosselDots.appendChild(dot);
+  });
+
+  carrosselPrev.addEventListener('click', () => irParaSlide(slideAtual - 1));
+  carrosselNext.addEventListener('click', () => irParaSlide(slideAtual + 1));
+
+  // Suporte a swipe (arrastar o dedo) no mobile
+  let touchStartX = 0;
+  const viewport = document.querySelector('.carrossel-viewport');
+  viewport.addEventListener(
+    'touchstart',
+    (e) => {
+      touchStartX = e.touches[0].clientX;
+    },
+    { passive: true },
+  );
+  viewport.addEventListener(
+    'touchend',
+    (e) => {
+      const touchEndX = e.changedTouches[0].clientX;
+      const diferenca = touchStartX - touchEndX;
+      if (Math.abs(diferenca) > 40) {
+        irParaSlide(slideAtual + (diferenca > 0 ? 1 : -1));
+      }
+    },
+    { passive: true },
+  );
+}
+
+function irParaSlide(indice) {
+  const total = TITULOS_SLIDES.length;
+  slideAtual = (indice + total) % total; // navegação circular
+
+  carrosselSlides.forEach((slide, i) => {
+    slide.classList.toggle('ativo', i === slideAtual);
+  });
+  carrosselTitulo.textContent = TITULOS_SLIDES[slideAtual];
+  [...carrosselDots.children].forEach((dot, i) => {
+    dot.classList.toggle('ativo', i === slideAtual);
+  });
+
+  // Passo crucial: o Chart.js não mede canvas com display:none. Ao tornar
+  // o slide visível de novo, é preciso forçar o recálculo do tamanho —
+  // essa é a causa-raiz do bug de gráfico "quebrado" no carrossel antigo.
+  requestAnimationFrame(() => {
+    if (slideAtual === 0 && pieChartInstance) pieChartInstance.resize();
+    if (slideAtual === 1 && lineChartInstance) lineChartInstance.resize();
+  });
+}
+
+// ---- Tema Claro/Escuro ----
+
+function aplicarTemaSalvo() {
+  let tema = 'claro';
+  try {
+    tema = localStorage.getItem('fuelcount_tema') || 'claro';
+  } catch (e) {
+    console.error('Não foi possível ler a preferência de tema.', e);
+  }
+  definirTema(tema);
+}
+
+function alternarTema() {
+  const temaAtual = document.body.classList.contains('dark-mode')
+    ? 'escuro'
+    : 'claro';
+  const novoTema = temaAtual === 'claro' ? 'escuro' : 'claro';
+  definirTema(novoTema);
+
+  try {
+    localStorage.setItem('fuelcount_tema', novoTema);
+  } catch (e) {
+    console.error('Não foi possível salvar a preferência de tema.', e);
+  }
+
+  // Recria os gráficos existentes para que texto/legenda usem a cor correta do novo tema
+  recriarGraficosComTemaAtual();
+}
+
+function definirTema(tema) {
+  if (tema === 'escuro') {
+    document.body.classList.add('dark-mode');
+    btnTema.textContent = '☀️';
+  } else {
+    document.body.classList.remove('dark-mode');
+    btnTema.textContent = '🌙';
+  }
+}
+
+function corTextoGrafico() {
+  return document.body.classList.contains('dark-mode') ? '#f8fafc' : '#0f172a';
+}
+
+function corGradeGrafico() {
+  return document.body.classList.contains('dark-mode') ? '#1e293b' : '#e2e8f0';
+}
+
+function recriarGraficosComTemaAtual() {
+  // Destrói as instâncias atuais para forçar recriação com as novas cores de texto/grade
+  if (pieChartInstance) {
+    pieChartInstance.destroy();
+    pieChartInstance = null;
+  }
+  if (lineChartInstance) {
+    lineChartInstance.destroy();
+    lineChartInstance = null;
+  }
+  if (detalheChartInstance) {
+    detalheChartInstance.destroy();
+    detalheChartInstance = null;
+  }
+
+  renderizarGraficoPizza();
+  renderizarGraficoLinha();
+
+  // Se o modal de detalhamento estiver aberto, recria o gráfico dele também
+  if (!modalOverlay.classList.contains('hidden') && categoriaAtualModal) {
+    const itensCategoria = estado.gastos
+      .filter((g) => g.categoria === categoriaAtualModal)
+      .sort((a, b) => b.valor - a.valor);
+    renderizarGraficoDetalhe(itensCategoria, categoriaAtualModal);
+  }
+}
