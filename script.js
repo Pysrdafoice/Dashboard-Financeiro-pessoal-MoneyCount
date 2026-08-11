@@ -33,6 +33,8 @@ const formGasto = document.getElementById('form-gasto');
 const descGasto = document.getElementById('desc-gasto');
 const valorGasto = document.getElementById('valor-gasto');
 const catGasto = document.getElementById('cat-gasto');
+const tipoGasto = document.getElementById('tipo-gasto');
+const parcelasGasto = document.getElementById('parcelas-gasto');
 const listaTransacoes = document.getElementById('lista-transacoes');
 
 const resRenda = document.getElementById('res-renda');
@@ -71,11 +73,17 @@ const backupStatus = document.getElementById('backup-status');
 // Elemento do botão de tema
 const btnTema = document.getElementById('btn-tema');
 
+// Elementos do Menu Hambúrguer (gaveta lateral)
+const btnMenu = document.getElementById('btn-menu');
+const btnFecharMenu = document.getElementById('btn-fechar-menu');
+const menuOverlay = document.getElementById('menu-overlay');
+
 // Elementos do Carrossel de Gráficos
 const carrosselPrev = document.getElementById('carrossel-prev');
 const carrosselNext = document.getElementById('carrossel-next');
 const carrosselDots = document.getElementById('carrossel-dots');
 const carrosselTitulo = document.getElementById('carrossel-titulo');
+const carrosselVariacao = document.getElementById('carrossel-variacao');
 const carrosselSlides = document.querySelectorAll('.carrossel-slide');
 const legendaPizza = document.getElementById('legenda-pizza');
 
@@ -103,6 +111,11 @@ document.addEventListener('DOMContentLoaded', () => {
     adicionarGasto();
   });
 
+  tipoGasto.addEventListener('change', () => {
+    parcelasGasto.classList.toggle('hidden', tipoGasto.value !== 'parcelado');
+    parcelasGasto.required = tipoGasto.value === 'parcelado';
+  });
+
   btnFecharMes.addEventListener('click', fecharMes);
 
   formLimite.addEventListener('submit', (e) => {
@@ -115,19 +128,61 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target === modalOverlay) fecharModal();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') fecharModal();
+    if (e.key === 'Escape') {
+      fecharModal();
+      fecharMenu();
+    }
   });
 
   btnExportarBackup.addEventListener('click', exportarBackup);
   btnImportarBackup.addEventListener('click', () => inputImportarBackup.click());
   inputImportarBackup.addEventListener('change', importarBackup);
   btnExportarCsv.addEventListener('click', exportarCsv);
+
+  btnMenu.addEventListener('click', abrirMenu);
+  btnFecharMenu.addEventListener('click', fecharMenu);
+  menuOverlay.addEventListener('click', (e) => {
+    if (e.target === menuOverlay) fecharMenu();
+  });
+
+  inicializarSecoesColapsaveis();
 });
+
+// ---- Menu Hambúrguer (gaveta lateral) ----
+function abrirMenu() {
+  menuOverlay.classList.remove('hidden');
+}
+
+function fecharMenu() {
+  menuOverlay.classList.add('hidden');
+}
+
+// ---- Seções Recolhíveis (Configuração, Extrato, Gráficos) ----
+function inicializarSecoesColapsaveis() {
+  document.querySelectorAll('.colapsavel').forEach((secao) => {
+    const botao = secao.querySelector('.btn-colapsar');
+    if (!botao) return;
+    botao.addEventListener('click', () => {
+      const colapsado = secao.classList.toggle('colapsado');
+      botao.setAttribute('aria-expanded', String(!colapsado));
+
+      // Ao reabrir a seção do carrossel, o Chart.js precisa recalcular o
+      // tamanho do canvas visível (mesma lógica usada na troca de slides)
+      if (!colapsado && secao.classList.contains('carrossel-card')) {
+        requestAnimationFrame(() => {
+          if (slideAtual === 0 && pieChartInstance) pieChartInstance.resize();
+          if (slideAtual === 1 && lineChartInstance) lineChartInstance.resize();
+        });
+      }
+    });
+  });
+}
 
 // Funções de Lógica e Manipulação de Dados
 function adicionarGasto() {
   const valor = parseFloat(valorGasto.value);
   const descricao = descGasto.value.trim();
+  const tipo = tipoGasto.value; // 'pontual' | 'fixo' | 'parcelado'
 
   if (!descricao) {
     alert('Digite uma descrição para o gasto.');
@@ -149,12 +204,26 @@ function adicionarGasto() {
     descricao: descricao,
     categoria: catGasto.value,
     valor: valor,
+    tipo: tipo,
   };
+
+  // Gastos parcelados carregam quantas parcelas ainda restam (incluindo a atual).
+  // Esse contador é decrementado a cada "Fechar Mês" até chegar a zero.
+  if (tipo === 'parcelado') {
+    const parcelas = parseInt(parcelasGasto.value, 10);
+    if (isNaN(parcelas) || parcelas < 2) {
+      alert('Informe o número total de parcelas (mínimo 2).');
+      return;
+    }
+    novoGasto.parcelasRestantes = parcelas;
+    novoGasto.parcelasTotal = parcelas;
+  }
 
   estado.gastos.push(novoGasto);
   salvarDados();
   atualizarInterface();
   formGasto.reset();
+  parcelasGasto.classList.add('hidden');
 }
 
 function removerGasto(id) {
@@ -191,7 +260,7 @@ function atualizarInterface() {
 
   resSaldo.className = saldoRestante >= 0 ? 'text-success' : 'text-danger';
 
-  const cardSaldo = resSaldo.closest('.resumo-item');
+  const cardSaldo = resSaldo.closest('.resumo-card');
   if (cardSaldo) {
     cardSaldo.classList.toggle('card-alerta', saldoRestante < 0);
   }
@@ -291,11 +360,12 @@ function renderizarExtrato() {
   estado.gastos.forEach((gasto) => {
     const card = document.createElement('article');
     const icone = pegarIconeCategoria(gasto.categoria);
+    const selo = pegarSeloTipoGasto(gasto);
     card.className = 'transacao-card';
     card.innerHTML = `
       <div class="transacao-card__icon" aria-hidden="true">${icone}</div>
       <div class="transacao-card__info">
-        <strong>${escapeHTML(gasto.descricao)}</strong>
+        <strong>${escapeHTML(gasto.descricao)}${selo}</strong>
         <span>${escapeHTML(gasto.categoria)}</span>
       </div>
       <div class="transacao-card__valor">
@@ -327,6 +397,18 @@ function pegarIconeCategoria(categoria) {
   };
 
   return icones[categoria] || '🧾';
+}
+
+// Selo visual ao lado da descrição: indica gastos Fixos ou Parcelados
+// (gastos Pontuais não recebem selo, pois são o comportamento padrão)
+function pegarSeloTipoGasto(gasto) {
+  if (gasto.tipo === 'fixo') {
+    return ' <span class="selo-tipo selo-fixo">Fixo</span>';
+  }
+  if (gasto.tipo === 'parcelado') {
+    return ` <span class="selo-tipo selo-parcelado">${gasto.parcelasRestantes}/${gasto.parcelasTotal}</span>`;
+  }
+  return '';
 }
 
 // Renderização de Gráficos com Chart.js
@@ -634,17 +716,44 @@ function fecharMes() {
   const dataAtual = new Date();
   const nomeMes = `${dataAtual.getMonth() + 1}/${dataAtual.getFullYear()}`;
 
+  // 1. Salva o mês encerrado no histórico (substitui se já existir um
+  //    registro com o mesmo nome de mês, evitando duplicatas)
   estado.historico = estado.historico.filter((h) => h.mes !== nomeMes);
-
   estado.historico.push({
     mes: nomeMes,
     salario: estado.salario,
     totalGastos: totalGastos,
   });
 
+  // 2. Monta a lista de gastos do NOVO mês:
+  //    - Pontuais: descartados (é exatamente o que os torna "pontuais")
+  //    - Fixos: mantidos como estão, repetem todo mês indefinidamente
+  //    - Parcelados: mantidos com uma parcela a menos; somem quando zeram
+  const novosGastos = [];
+
+  estado.gastos.forEach((gasto) => {
+    if (gasto.tipo === 'fixo') {
+      novosGastos.push({ ...gasto });
+      return;
+    }
+
+    if (gasto.tipo === 'parcelado') {
+      const parcelasRestantes = (gasto.parcelasRestantes || 1) - 1;
+      if (parcelasRestantes > 0) {
+        novosGastos.push({ ...gasto, parcelasRestantes });
+      }
+      // Se chegou a 0, a parcela foi paga por completo e não volta pro próximo mês
+      return;
+    }
+
+    // tipo === 'pontual' (ou ausente, por retrocompatibilidade): não retorna
+  });
+
+  estado.gastos = novosGastos;
+
   salvarDados();
   atualizarInterface();
-  alert('Mês salvo com sucesso no histórico!');
+  alert('Mês fechado! Gastos fixos e parcelas ativas já estão prontos para o novo mês.');
 }
 
 // Persistência local (LocalStorage) com tratamento de erro
@@ -845,6 +954,19 @@ function irParaSlide(indice) {
     dot.classList.toggle('ativo', i === slideAtual);
   });
 
+  const ehSlideHistorico = slideAtual === 1;
+
+  // Requisito: o botão de minimizar não deve existir para a Evolução
+  // Histórica. Como Pizza e Histórico dividem o mesmo card (carrossel),
+  // a seta é escondida somente enquanto o slide de Histórico está ativo,
+  // e volta a aparecer normalmente no slide de Distribuição.
+  const btnColapsarCarrossel = document.querySelector('.carrossel-card .btn-colapsar');
+  if (btnColapsarCarrossel) {
+    btnColapsarCarrossel.classList.toggle('hidden', ehSlideHistorico);
+  }
+
+  atualizarBadgeVariacao(ehSlideHistorico);
+
   // Passo crucial: o Chart.js não mede canvas com display:none. Ao tornar
   // o slide visível de novo, é preciso forçar o recálculo do tamanho —
   // essa é a causa-raiz do bug de gráfico "quebrado" no carrossel antigo.
@@ -852,6 +974,42 @@ function irParaSlide(indice) {
     if (slideAtual === 0 && pieChartInstance) pieChartInstance.resize();
     if (slideAtual === 1 && lineChartInstance) lineChartInstance.resize();
   });
+}
+
+// ---- Evolução Histórica: variação percentual vs. mês anterior ----
+
+/**
+ * Calcula a variação percentual entre o valor atual e o valor anterior.
+ * Regra de negócio: se não houver valor anterior para comparar (undefined,
+ * null ou 0 — divisão por zero não faz sentido aqui), retorna null.
+ * @returns {number|null} variação em pontos percentuais, ou null se não houver base de comparação
+ */
+function calcularVariacaoPercentual(atual, anterior) {
+  if (anterior === undefined || anterior === null || anterior === 0) {
+    return null;
+  }
+  return ((atual - anterior) / anterior) * 100;
+}
+
+function atualizarBadgeVariacao(visivel) {
+  if (!visivel || estado.historico.length === 0) {
+    carrosselVariacao.classList.add('hidden');
+    return;
+  }
+
+  const { totalGastos } = calcularTotais();
+  const mesAnterior = estado.historico[estado.historico.length - 1];
+  const variacao = calcularVariacaoPercentual(totalGastos, mesAnterior.totalGastos);
+
+  if (variacao === null) {
+    carrosselVariacao.classList.add('hidden');
+    return;
+  }
+
+  const sinal = variacao > 0 ? '+' : '';
+  carrosselVariacao.textContent = `${sinal}${variacao.toFixed(1)}% vs. mês anterior`;
+  carrosselVariacao.classList.remove('hidden', 'variacao-positiva', 'variacao-negativa');
+  carrosselVariacao.classList.add(variacao > 0 ? 'variacao-positiva' : 'variacao-negativa');
 }
 
 // ---- Tema Claro/Escuro ----

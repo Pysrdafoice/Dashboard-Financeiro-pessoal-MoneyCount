@@ -13,19 +13,46 @@
 </head>
 <body>
     <header class="app-header">
+        <button id="btn-menu" class="btn-hamburguer" aria-label="Abrir menu" title="Menu">☰</button>
         <button id="btn-tema" class="btn-tema" aria-label="Alternar tema claro/escuro" title="Alternar tema">🌙</button>
 
         <div class="app-header__content">
             <span class="app-header__badge">Dashboard financeiro</span>
-            <h1>MoneyCount <span>📊</span></h1>
+            <h1>FuelCount <span>📊</span></h1>
             <p>Gerencie suas finanças, acompanhe categorias e visualize seu histórico.</p>
         </div>
     </header>
 
+    <!-- Menu Lateral (gaveta): opções de Exportar / Backup -->
+    <div id="menu-overlay" class="menu-overlay hidden">
+        <aside class="menu-painel">
+            <div class="menu-cabecalho">
+                <h2>Menu</h2>
+                <button id="btn-fechar-menu" class="btn-fechar-modal" aria-label="Fechar menu">&times;</button>
+            </div>
+
+            <div class="menu-secao">
+                <h3>Exportar &amp; Backup</h3>
+                <p class="chart-hint">Salve uma cópia dos seus dados ou restaure um backup anterior.</p>
+                <div class="backup-botoes">
+                    <button id="btn-exportar-backup" class="btn-secondary">⬇️ Baixar Backup (JSON)</button>
+                    <button id="btn-importar-backup" class="btn-secondary">⬆️ Restaurar Backup</button>
+                    <button id="btn-exportar-csv" class="btn-secondary">📄 Exportar Extrato (CSV)</button>
+                </div>
+                <input type="file" id="input-importar-backup" accept="application/json" hidden>
+                <p id="backup-status" class="backup-status hidden"></p>
+            </div>
+        </aside>
+    </div>
+
     <main class="container">
         <!-- Seção de Entrada e Resumo -->
-        <section class="card config-card">
-            <h2>Configuração do Mês</h2>
+        <section class="card config-card colapsavel">
+            <div class="card-cabecalho">
+                <h2>Configuração do Mês</h2>
+                <button class="btn-colapsar" aria-label="Minimizar Configuração do Mês" title="Minimizar/expandir">⌄</button>
+            </div>
+            <div class="card-corpo">
             <div class="input-group">
                 <label for="input-salario">Salário Bruto / Renda Base (R$):</label>
                 <input type="number" id="input-salario" placeholder="Ex: 4500.00" step="0.01" min="0">
@@ -49,6 +76,16 @@
                     <option value="Outros">Outros</option>
                 </select>
                 <button type="submit" class="btn-primary">Adicionar</button>
+
+                <!-- Tipo do gasto: define o que acontece com ele ao Fechar o Mês -->
+                <div class="gasto-tipo-campos">
+                    <select id="tipo-gasto" title="Tipo de gasto">
+                        <option value="pontual" selected>Pontual (não repete)</option>
+                        <option value="fixo">Fixo (repete todo mês)</option>
+                        <option value="parcelado">Parcelado (cartão)</option>
+                    </select>
+                    <input type="number" id="parcelas-gasto" placeholder="Nº de parcelas" min="2" step="1" class="hidden" title="Quantidade total de parcelas">
+                </div>
             </form>
 
             <h3 class="limites-titulo">Limites por Categoria</h3>
@@ -70,75 +107,78 @@
                 <button type="submit" class="btn-primary">Definir</button>
             </form>
             <ul id="lista-limites" class="lista-limites"></ul>
-        </section>
-
-        <!-- Exportar / Backup de Dados -->
-        <section class="card">
-            <h2>Exportar &amp; Backup</h2>
-            <p class="chart-hint" style="margin-bottom: 14px;">Salve uma cópia dos seus dados ou restaure um backup anterior.</p>
-            <div class="backup-botoes">
-                <button id="btn-exportar-backup" class="btn-secondary">⬇️ Baixar Backup (JSON)</button>
-                <button id="btn-importar-backup" class="btn-secondary">⬆️ Restaurar Backup</button>
-                <button id="btn-exportar-csv" class="btn-secondary">📄 Exportar Extrato (CSV)</button>
             </div>
-            <input type="file" id="input-importar-backup" accept="application/json" hidden>
-            <p id="backup-status" class="backup-status hidden"></p>
         </section>
 
-        <!-- Cards de Resumo Financeiro -->
-        <section class="resumo-grid">
-            <div class="card resumo-item">
+        <!-- Resumo Financeiro: as três informações numa única div, alinhadas -->
+        <section class="card resumo-card">
+            <div class="resumo-item">
                 <h3>Renda Total</h3>
                 <p id="res-renda">R$ 0,00</p>
             </div>
-            <div class="card resumo-item">
+            <div class="resumo-divisor"></div>
+            <div class="resumo-item">
                 <h3>Gastos Totais</h3>
                 <p id="res-gastos" class="text-danger">R$ 0,00</p>
             </div>
-            <div class="card resumo-item">
+            <div class="resumo-divisor"></div>
+            <div class="resumo-item">
                 <h3>Saldo Restante</h3>
                 <p id="res-saldo" class="text-success">R$ 0,00</p>
             </div>
         </section>
 
         <!-- Extrato de Gastos -->
-        <section class="card">
-            <h2>Gastos do Mês</h2>
-            <div id="lista-transacoes" class="transacoes-lista"></div>
+        <section class="card colapsavel">
+            <div class="card-cabecalho">
+                <h2>Gastos do Mês</h2>
+                <button class="btn-colapsar" aria-label="Minimizar Gastos do Mês" title="Minimizar/expandir">⌄</button>
+            </div>
+            <div class="card-corpo">
+                <div id="lista-transacoes" class="transacoes-lista"></div>
+            </div>
         </section>
 
         <!-- Carrossel de Gráficos: Distribuição por Categoria + Evolução Histórica -->
-        <section class="card carrossel-card">
-            <div class="carrossel-header">
-                <h2 id="carrossel-titulo">Distribuição por Categoria</h2>
-                <button id="btn-fechar-mes" class="btn-secondary btn-fechar-compacto">Fechar Mês</button>
+        <section class="card carrossel-card colapsavel">
+            <div class="carrossel-header card-cabecalho">
+                <div class="carrossel-titulo-wrap">
+                    <h2 id="carrossel-titulo">Distribuição por Categoria</h2>
+                    <span id="carrossel-variacao" class="carrossel-variacao hidden"></span>
+                </div>
+                <div class="carrossel-header-acoes">
+                    <button id="btn-fechar-mes" class="btn-secondary btn-fechar-compacto">Fechar Mês</button>
+                    <button class="btn-colapsar" aria-label="Minimizar Gráficos" title="Minimizar/expandir">⌄</button>
+                </div>
             </div>
 
-            <div class="carrossel-wrap">
-                <button id="carrossel-prev" class="carrossel-seta" aria-label="Gráfico anterior">&#10094;</button>
+            <div class="card-corpo">
+                <div class="carrossel-wrap">
+                    <button id="carrossel-prev" class="carrossel-seta" aria-label="Gráfico anterior">&#10094;</button>
 
-                <div class="carrossel-viewport">
-                    <div class="carrossel-slide ativo" data-slide="0">
-                        <p class="chart-hint">Toque em uma fatia para ver o detalhamento</p>
-                        <div class="pizza-chart-wrap">
-                            <canvas id="pieChart"></canvas>
+                    <div class="carrossel-viewport">
+                        <div class="carrossel-slide ativo" data-slide="0">
+                            <p class="chart-hint">Toque em uma fatia para ver o detalhamento</p>
+                            <div class="pizza-chart-wrap">
+                                <canvas id="pieChart"></canvas>
+                            </div>
+                            <div id="legenda-pizza" class="legenda-pizza"></div>
                         </div>
-                        <div id="legenda-pizza" class="legenda-pizza"></div>
-                    </div>
 
-                    <div class="carrossel-slide" data-slide="1">
-                        <div class="history-scroll">
-                            <div class="historico-chart-wrap">
-                                <canvas id="lineChart"></canvas>
+                        <div class="carrossel-slide" data-slide="1">
+                            <div class="history-scroll">
+                                <div class="historico-chart-wrap">
+                                    <canvas id="lineChart"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    <button id="carrossel-next" class="carrossel-seta" aria-label="Próximo gráfico">&#10095;</button>
                 </div>
 
-                <button id="carrossel-next" class="carrossel-seta" aria-label="Próximo gráfico">&#10095;</button>
+                <div id="carrossel-dots" class="carrossel-dots"></div>
             </div>
-
-            <div id="carrossel-dots" class="carrossel-dots"></div>
         </section>
     </main>
 

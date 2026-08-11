@@ -59,6 +59,19 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ---- Feedback tátil de clique: aplica a TODOS os botões do app ----
+   Usa :active (funciona em touch e mouse) com uma transição curta,
+   dando a sensação de "pressionar" o botão. Elementos que já têm
+   transform persistente (como .btn-colapsar) implementam sua própria
+   versão combinada via variável CSS logo abaixo, para não conflitar. */
+button {
+  transition: transform 0.12s ease, background-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+button:active {
+  transform: scale(0.95);
+}
+
 html, body {
   max-width: 100%;
   overflow-x: hidden;
@@ -213,27 +226,29 @@ select:focus {
   background-color: #334155;
 }
 
-.resumo-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  padding-bottom: 2px;
-}
-
-.resumo-scroll::-webkit-scrollbar {
-  display: none;
+/* Resumo Financeiro: uma única div com as 3 informações lado a lado */
+.resumo-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 18px 14px;
 }
 
 .resumo-item {
-  scroll-snap-align: start;
+  flex: 1;
+  text-align: center;
   min-width: 0;
 }
 
+.resumo-divisor {
+  width: 1px;
+  align-self: stretch;
+  background-color: var(--border-color);
+}
+
 .resumo-item h3 {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -241,15 +256,18 @@ select:focus {
 }
 
 .resumo-item p {
-  font-size: 1.9rem;
+  font-size: 1.35rem;
   font-weight: 700;
   margin-top: 4px;
   letter-spacing: -0.01em;
   color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Destaque quando o saldo fica negativo (aplicado via JS: card-alerta) */
-.resumo-item.card-alerta {
+.resumo-card.card-alerta {
   border: 1px solid var(--danger);
   background-color: #fef2f2;
 }
@@ -471,6 +489,27 @@ select:focus {
   padding: 20px 10px;
 }
 
+.selo-tipo {
+  display: inline-block;
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+}
+
+.selo-fixo {
+  background-color: rgba(15, 118, 110, 0.12);
+  color: var(--primary);
+}
+
+.selo-parcelado {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: var(--accent);
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -501,7 +540,10 @@ select:focus {
     grid-template-columns: 1fr;
   }
   .resumo-item p {
-    font-size: 1.3rem;
+    font-size: 1.05rem;
+  }
+  .resumo-card {
+    padding: 14px 8px;
   }
   .app-header h1 {
     font-size: 1.55rem;
@@ -511,16 +553,6 @@ select:focus {
   }
   .app-header p {
     font-size: 0.92rem;
-  }
-  .resumo-nav {
-    grid-template-columns: auto 1fr auto;
-  }
-  .btn-arrow {
-    width: 34px;
-    height: 34px;
-  }
-  .resumo-scroll {
-    grid-auto-columns: minmax(220px, 85%);
   }
   .transacao-card {
     grid-template-columns: 42px 1fr;
@@ -582,6 +614,51 @@ select:focus {
 
 body.dark-mode .backup-status.erro {
   background-color: #3f1d1d;
+}
+
+/* Utilitária genérica: usada por vários componentes (parcelas-gasto, variação, etc.) */
+.hidden {
+  display: none !important;
+}
+
+/* ---- Tipo de Gasto (Pontual / Fixo / Parcelado) ---- */
+.gasto-tipo-campos {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 12px;
+  margin-top: -4px;
+}
+
+.gasto-tipo-campos select,
+.gasto-tipo-campos input {
+  flex: 1;
+}
+
+/* ---- Badge de Variação Percentual (Evolução Histórica) ---- */
+.carrossel-titulo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.carrossel-variacao {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.carrossel-variacao.variacao-positiva {
+  color: var(--danger); /* gasto subindo é uma notícia ruim, por isso a cor de alerta */
+  background-color: rgba(225, 29, 72, 0.1);
+}
+
+.carrossel-variacao.variacao-negativa {
+  color: var(--success); /* gasto caindo é uma notícia boa */
+  background-color: rgba(5, 150, 105, 0.1);
 }
 
 /* Dica de clique no gráfico de pizza */
@@ -843,7 +920,7 @@ body.dark-mode .backup-status.erro {
 }
 
 /* ---- Ajustes específicos do tema escuro ---- */
-body.dark-mode .card-alerta {
+body.dark-mode .resumo-card.card-alerta {
   background-color: #3f1d1d;
 }
 
@@ -903,4 +980,146 @@ body.dark-mode th {
     width: 38px;
     height: 38px;
   }
+  .btn-hamburguer {
+    top: 10px;
+    left: 10px;
+    width: 38px;
+    height: 38px;
+  }
+}
+
+/* ---- Botão Hambúrguer ---- */
+.btn-hamburguer {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  width: 42px;
+  height: 42px;
+  font-size: 1.15rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
+  transition: background-color 0.2s, transform 0.15s;
+  z-index: 50;
+  color: var(--text-main);
+}
+
+.btn-hamburguer:hover {
+  transform: scale(1.08);
+}
+
+/* ---- Menu Lateral (Gaveta) ---- */
+.menu-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  z-index: 200;
+  display: flex;
+}
+
+.menu-overlay.hidden {
+  display: none;
+}
+
+.menu-painel {
+  width: min(320px, 82vw);
+  height: 100%;
+  background: var(--card-bg);
+  padding: 20px;
+  overflow-y: auto;
+  animation: menuDeslizar 0.2s ease-out;
+  box-shadow: 4px 0 20px rgba(15, 23, 42, 0.15);
+}
+
+@keyframes menuDeslizar {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.menu-cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.menu-cabecalho h2 {
+  color: var(--primary);
+}
+
+.menu-secao h3 {
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+}
+
+.menu-secao .chart-hint {
+  margin-bottom: 14px;
+}
+
+/* ---- Cards Colapsáveis ---- */
+.card-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.colapsavel .card-cabecalho {
+  margin-bottom: 12px;
+}
+
+.carrossel-header-acoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-colapsar {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  width: 30px;
+  height: 30px;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* --rotacao controla o giro persistente (expandido/colapsado);
+     --escala controla o feedback momentâneo de clique.
+     Combinar as duas em uma variável evita que a regra :active
+     (menos específica) seja "vencida" pela regra .colapsado (mais específica). */
+  --rotacao: 0deg;
+  --escala: 1;
+  transform: rotate(var(--rotacao)) scale(var(--escala));
+  transition: transform 0.2s ease, background-color 0.15s;
+}
+
+.btn-colapsar:hover {
+  background-color: var(--table-header-bg);
+}
+
+.btn-colapsar:active {
+  --escala: 0.85;
+  transform: rotate(var(--rotacao)) scale(var(--escala));
+}
+
+/* Quando colapsado, a seta gira (bug anterior: girava para o lado errado
+   com rotate(-90deg); correto é apontar para cima, indicando "clique para expandir") */
+.colapsavel.colapsado .card-corpo {
+  display: none;
+}
+
+.colapsavel.colapsado .btn-colapsar {
+  --rotacao: 180deg;
 }
