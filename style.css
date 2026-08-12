@@ -539,6 +539,12 @@ select:focus {
   .limite-form {
     grid-template-columns: 1fr;
   }
+  .poupanca-form {
+    grid-template-columns: 1fr;
+  }
+  .poupanca-saldo-valor {
+    font-size: 1.6rem;
+  }
   .resumo-item p {
     font-size: 1.05rem;
   }
@@ -619,6 +625,121 @@ body.dark-mode .backup-status.erro {
 /* Utilitária genérica: usada por vários componentes (parcelas-gasto, variação, etc.) */
 .hidden {
   display: none !important;
+}
+
+/* ---- Poupança / Guardado ---- */
+.poupanca-saldo-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.poupanca-saldo-valor {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: -0.02em;
+  margin-top: 4px;
+  margin-bottom: 16px;
+}
+
+.poupanca-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4fr auto;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.lista-poupanca {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.poupanca-vazio {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.poupanca-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.85rem;
+}
+
+.poupanca-item:last-child {
+  border-bottom: none;
+}
+
+.poupanca-item-icone {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.poupanca-item.deposito .poupanca-item-icone {
+  background-color: rgba(5, 150, 105, 0.12);
+  color: var(--success);
+}
+
+.poupanca-item.retirada .poupanca-item-icone {
+  background-color: rgba(225, 29, 72, 0.1);
+  color: var(--danger);
+}
+
+.poupanca-item-info {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+.poupanca-item-valor {
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.poupanca-item.deposito .poupanca-item-valor {
+  color: var(--success);
+}
+
+.poupanca-item.retirada .poupanca-item-valor {
+  color: var(--danger);
+}
+
+.btn-remover-poupanca {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.btn-remover-poupanca:hover {
+  background-color: var(--border-color);
+  color: var(--danger);
 }
 
 /* ---- Tipo de Gasto (Pontual / Fixo / Parcelado) ---- */

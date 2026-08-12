@@ -4,6 +4,7 @@ let estado = {
   gastos: [],
   historico: [],
   limites: {}, // { 'Categoria': valorLimiteMensal }
+  poupanca: [], // [{ id, tipo: 'deposito'|'retirada', valor, descricao, data }]
 };
 
 // Mapa de cores fixo por categoria (mantém consistência visual mês a mês)
@@ -36,6 +37,14 @@ const catGasto = document.getElementById('cat-gasto');
 const tipoGasto = document.getElementById('tipo-gasto');
 const parcelasGasto = document.getElementById('parcelas-gasto');
 const listaTransacoes = document.getElementById('lista-transacoes');
+
+// Elementos de Poupança / Guardado
+const formPoupanca = document.getElementById('form-poupanca');
+const tipoPoupanca = document.getElementById('tipo-poupanca');
+const valorPoupanca = document.getElementById('valor-poupanca');
+const descPoupanca = document.getElementById('desc-poupanca');
+const poupancaSaldo = document.getElementById('poupanca-saldo');
+const listaPoupanca = document.getElementById('lista-poupanca');
 
 const resRenda = document.getElementById('res-renda');
 const resGastos = document.getElementById('res-gastos');
@@ -111,9 +120,20 @@ document.addEventListener('DOMContentLoaded', () => {
     adicionarGasto();
   });
 
+  formPoupanca.addEventListener('submit', (e) => {
+    e.preventDefault();
+    registrarMovimentoPoupanca();
+  });
+
   tipoGasto.addEventListener('change', () => {
+    // A visibilidade é o único controle necessário aqui — a validação de
+    // preenchimento já é feita manualmente dentro de adicionarGasto().
+    // Propositalmente NÃO usamos o atributo `required` nativo neste campo:
+    // como ele fica escondido (display:none) quando o tipo não é "parcelado",
+    // o HTML5 tentaria focar um campo invisível ao validar o formulário,
+    // o que o navegador recusa e gera o erro
+    // "An invalid form control with name='' is not focusable.".
     parcelasGasto.classList.toggle('hidden', tipoGasto.value !== 'parcelado');
-    parcelasGasto.required = tipoGasto.value === 'parcelado';
   });
 
   btnFecharMes.addEventListener('click', fecharMes);
@@ -269,6 +289,7 @@ function atualizarInterface() {
   renderizarGraficoPizza();
   renderizarGraficoLinha();
   renderizarListaLimites();
+  renderizarPoupanca();
 }
 
 // ---- Limites por Categoria ----
@@ -337,6 +358,80 @@ function renderizarListaLimites() {
       removerLimite(categoria),
     );
     listaLimites.appendChild(li);
+  });
+}
+
+// ---- Poupança / Guardado (valor controlado manualmente pelo usuário) ----
+
+function calcularSaldoPoupanca() {
+  return estado.poupanca.reduce((acc, mov) => {
+    return mov.tipo === 'retirada' ? acc - mov.valor : acc + mov.valor;
+  }, 0);
+}
+
+function registrarMovimentoPoupanca() {
+  const tipo = tipoPoupanca.value; // 'deposito' | 'retirada'
+  const valor = parseFloat(valorPoupanca.value);
+  const descricao = descPoupanca.value.trim();
+
+  if (isNaN(valor) || valor <= 0) {
+    alert('Digite um valor válido, maior que zero.');
+    return;
+  }
+
+  // Evita que uma retirada deixe o saldo guardado negativo
+  if (tipo === 'retirada' && valor > calcularSaldoPoupanca()) {
+    alert('Você não pode retirar mais do que tem guardado.');
+    return;
+  }
+
+  estado.poupanca.push({
+    id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+    tipo: tipo,
+    valor: valor,
+    descricao: descricao || (tipo === 'deposito' ? 'Depósito' : 'Retirada'),
+    data: new Date().toISOString(),
+  });
+
+  salvarDados();
+  renderizarPoupanca();
+  formPoupanca.reset();
+}
+
+function removerMovimentoPoupanca(id) {
+  estado.poupanca = estado.poupanca.filter((mov) => mov.id !== id);
+  salvarDados();
+  renderizarPoupanca();
+}
+
+function renderizarPoupanca() {
+  poupancaSaldo.textContent = formatarMoeda(calcularSaldoPoupanca());
+
+  listaPoupanca.innerHTML = '';
+
+  if (estado.poupanca.length === 0) {
+    listaPoupanca.innerHTML = `<li class="poupanca-vazio">Nenhum movimento registrado ainda.</li>`;
+    return;
+  }
+
+  // Mais recentes primeiro
+  [...estado.poupanca].reverse().forEach((mov) => {
+    const ehDeposito = mov.tipo === 'deposito';
+    const icone = ehDeposito ? '⬆️' : '⬇️';
+    const sinal = ehDeposito ? '+' : '−';
+
+    const li = document.createElement('li');
+    li.className = `poupanca-item ${mov.tipo}`;
+    li.innerHTML = `
+      <div class="poupanca-item-icone">${icone}</div>
+      <span class="poupanca-item-info">${escapeHTML(mov.descricao)}</span>
+      <span class="poupanca-item-valor">${sinal} ${formatarMoeda(mov.valor)}</span>
+      <button class="btn-remover-poupanca" title="Remover" aria-label="Remover movimento ${escapeHTML(mov.descricao)}">&times;</button>
+    `;
+    li.querySelector('.btn-remover-poupanca').addEventListener('click', () =>
+      removerMovimentoPoupanca(mov.id),
+    );
+    listaPoupanca.appendChild(li);
   });
 }
 
@@ -778,11 +873,12 @@ function carregarDados() {
           parsed.limites && typeof parsed.limites === 'object'
             ? parsed.limites
             : {},
+        poupanca: Array.isArray(parsed.poupanca) ? parsed.poupanca : [],
       };
     }
   } catch (e) {
     console.error('Dados corrompidos no localStorage, iniciando do zero.', e);
-    estado = { salario: 0, gastos: [], historico: [], limites: {} };
+    estado = { salario: 0, gastos: [], historico: [], limites: {}, poupanca: [] };
   }
 }
 
@@ -860,6 +956,7 @@ function importarBackup(e) {
         gastos: Array.isArray(dados.gastos) ? dados.gastos : [],
         historico: Array.isArray(dados.historico) ? dados.historico : [],
         limites: dados.limites && typeof dados.limites === 'object' ? dados.limites : {},
+        poupanca: Array.isArray(dados.poupanca) ? dados.poupanca : [],
       };
 
       salvarDados();

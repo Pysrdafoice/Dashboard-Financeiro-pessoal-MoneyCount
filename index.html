@@ -128,6 +128,30 @@
             </div>
         </section>
 
+        <!-- Poupança / Guardado: valor digitado manualmente pelo usuário -->
+        <section class="card colapsavel">
+            <div class="card-cabecalho">
+                <h2>🐷 Guardado</h2>
+                <button class="btn-colapsar" aria-label="Minimizar Guardado" title="Minimizar/expandir">⌄</button>
+            </div>
+            <div class="card-corpo">
+                <p class="poupanca-saldo-label">Total guardado</p>
+                <p id="poupanca-saldo" class="poupanca-saldo-valor">R$ 0,00</p>
+
+                <form id="form-poupanca" class="poupanca-form">
+                    <select id="tipo-poupanca">
+                        <option value="deposito" selected>Guardar</option>
+                        <option value="retirada">Retirar</option>
+                    </select>
+                    <input type="number" id="valor-poupanca" placeholder="Valor (R$)" step="0.01" min="0.01" required>
+                    <input type="text" id="desc-poupanca" placeholder="Descrição (opcional)">
+                    <button type="submit" class="btn-primary">Registrar</button>
+                </form>
+
+                <ul id="lista-poupanca" class="lista-poupanca"></ul>
+            </div>
+        </section>
+
         <!-- Extrato de Gastos -->
         <section class="card colapsavel">
             <div class="card-cabecalho">
