@@ -49,6 +49,7 @@ const listaPoupanca = document.getElementById('lista-poupanca');
 const resRenda = document.getElementById('res-renda');
 const resGastos = document.getElementById('res-gastos');
 const resSaldo = document.getElementById('res-saldo');
+const resSaldoLivre = document.getElementById('res-saldo-livre');
 const btnFecharMes = document.getElementById('btn-fechar-mes');
 
 // Elementos de Limites por Categoria
@@ -271,7 +272,16 @@ function calcularTotais() {
 }
 
 function atualizarInterface() {
-  inputSalario.value = estado.salario ? estado.salario : '';
+  // Só resincroniza o campo com o estado quando ele NÃO está em foco.
+  // Antes, essa linha rodava a cada tecla digitada (via listener de 'input'
+  // logo abaixo), reescrevendo o valor no meio da digitação — isso jogava
+  // o cursor pro fim do texto, apagando o "." recém-digitado ou empurrando
+  // a vírgula pro começo. Fora do foco (ex: após importar backup, fechar
+  // o mês, ou no carregamento inicial), a resincronização continua normal.
+  if (document.activeElement !== inputSalario) {
+    inputSalario.value = estado.salario ? estado.salario : '';
+  }
+
   const { totalGastos, saldoRestante } = calcularTotais();
 
   resRenda.textContent = formatarMoeda(estado.salario);
@@ -280,9 +290,9 @@ function atualizarInterface() {
 
   resSaldo.className = saldoRestante >= 0 ? 'text-success' : 'text-danger';
 
-  const cardSaldo = resSaldo.closest('.resumo-card');
-  if (cardSaldo) {
-    cardSaldo.classList.toggle('card-alerta', saldoRestante < 0);
+  const cardResumo = document.getElementById('card-resumo');
+  if (cardResumo) {
+    cardResumo.classList.toggle('card-alerta', saldoRestante < 0);
   }
 
   renderizarExtrato();
@@ -369,6 +379,26 @@ function calcularSaldoPoupanca() {
   }, 0);
 }
 
+/**
+ * Movimento líquido de poupança dentro do mês/ano atual (depósitos menos
+ * retiradas). Usado só para calcular o "Saldo Livre" — de propósito NÃO
+ * usa o saldo total acumulado, porque "Guardado" nunca zera ao Fechar o
+ * Mês, enquanto "Saldo Restante" é sempre relativo ao mês corrente. Somar
+ * o total histórico deixaria o Saldo Livre cada vez mais negativo com o
+ * passar dos meses, mesmo sem nenhum gasto novo.
+ */
+function calcularMovimentoPoupancaMesAtual() {
+  const agora = new Date();
+  return estado.poupanca.reduce((acc, mov) => {
+    const dataMov = new Date(mov.data);
+    const mesmoMes =
+      dataMov.getMonth() === agora.getMonth() &&
+      dataMov.getFullYear() === agora.getFullYear();
+    if (!mesmoMes) return acc;
+    return mov.tipo === 'retirada' ? acc - mov.valor : acc + mov.valor;
+  }, 0);
+}
+
 function registrarMovimentoPoupanca() {
   const tipo = tipoPoupanca.value; // 'deposito' | 'retirada'
   const valor = parseFloat(valorPoupanca.value);
@@ -404,8 +434,33 @@ function removerMovimentoPoupanca(id) {
   renderizarPoupanca();
 }
 
+/**
+ * Atualiza a 4ª coluna "Livre p/ Gastar" no card de Resumo (junto com seu
+ * divisor). Fica escondida quando não há movimento de poupança neste mês,
+ * pois nesse caso Saldo Livre === Saldo Restante e mostrar seria redundante.
+ */
+function atualizarSaldoLivre() {
+  const { saldoRestante } = calcularTotais();
+  const movimentoMes = calcularMovimentoPoupancaMesAtual();
+  const itemLivre = document.getElementById('resumo-item-livre');
+  const divisorLivre = document.getElementById('resumo-divisor-livre');
+
+  if (movimentoMes === 0) {
+    itemLivre.classList.add('hidden');
+    divisorLivre.classList.add('hidden');
+    return;
+  }
+
+  const saldoLivre = saldoRestante - movimentoMes;
+  resSaldoLivre.textContent = formatarMoeda(saldoLivre);
+  resSaldoLivre.className = saldoLivre >= 0 ? 'text-success' : 'text-danger';
+  itemLivre.classList.remove('hidden');
+  divisorLivre.classList.remove('hidden');
+}
+
 function renderizarPoupanca() {
   poupancaSaldo.textContent = formatarMoeda(calcularSaldoPoupanca());
+  atualizarSaldoLivre();
 
   listaPoupanca.innerHTML = '';
 

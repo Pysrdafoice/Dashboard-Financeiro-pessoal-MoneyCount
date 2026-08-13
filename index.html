@@ -46,85 +46,79 @@
     </div>
 
     <main class="container">
-        <!-- Seção de Entrada e Resumo -->
-        <section class="card config-card colapsavel">
+        <!-- Configuração do Mês: o próprio label do campo serve de título -->
+        <section class="card colapsavel">
             <div class="card-cabecalho">
-                <h2>Configuração do Mês</h2>
-                <button class="btn-colapsar" aria-label="Minimizar Configuração do Mês" title="Minimizar/expandir">⌄</button>
+                <h2 id="titulo-salario">Salário Bruto / Renda Base (R$):</h2>
+                <button class="btn-colapsar" aria-label="Minimizar Salário" title="Minimizar/expandir">⌄</button>
             </div>
             <div class="card-corpo">
-            <div class="input-group">
-                <label for="input-salario">Salário Bruto / Renda Base (R$):</label>
-                <input type="number" id="input-salario" placeholder="Ex: 4500.00" step="0.01" min="0">
-            </div>
-
-            <h3>Adicionar Gasto</h3>
-            <form id="form-gasto" class="gasto-form">
-                <input type="text" id="desc-gasto" placeholder="Descrição (Ex: Aluguel, Supermercado)" required>
-                <input type="number" id="valor-gasto" placeholder="Valor (R$)" step="0.01" min="0.01" required>
-                <select id="cat-gasto" required>
-                    <option value="" disabled selected>Selecione a Categoria</option>
-                    <option value="Moradia">Moradia</option>
-                    <option value="Alimentação">Alimentação</option>
-                    <option value="Transporte">Transporte</option>
-                    <option value="Lazer">Lazer</option>
-                    <option value="Saúde">Saúde</option>
-                    <option value="Estética">Estética</option>
-                    <option value="Assinaturas">Assinaturas</option>
-                    <option value="Investimentos">Investimentos</option>
-                    <option value="Educação">Educação</option>
-                    <option value="Outros">Outros</option>
-                </select>
-                <button type="submit" class="btn-primary">Adicionar</button>
-
-                <!-- Tipo do gasto: define o que acontece com ele ao Fechar o Mês -->
-                <div class="gasto-tipo-campos">
-                    <select id="tipo-gasto" title="Tipo de gasto">
-                        <option value="pontual" selected>Pontual (não repete)</option>
-                        <option value="fixo">Fixo (repete todo mês)</option>
-                        <option value="parcelado">Parcelado (cartão)</option>
-                    </select>
-                    <input type="number" id="parcelas-gasto" placeholder="Nº de parcelas" min="2" step="1" class="hidden" title="Quantidade total de parcelas">
-                </div>
-            </form>
-
-            <h3 class="limites-titulo">Limites por Categoria</h3>
-            <form id="form-limite" class="limite-form">
-                <select id="cat-limite" required>
-                    <option value="" disabled selected>Categoria</option>
-                    <option value="Moradia">Moradia</option>
-                    <option value="Alimentação">Alimentação</option>
-                    <option value="Transporte">Transporte</option>
-                    <option value="Lazer">Lazer</option>
-                    <option value="Saúde">Saúde</option>
-                    <option value="Estética">Estética</option>
-                    <option value="Assinaturas">Assinaturas</option>
-                    <option value="Investimentos">Investimentos</option>
-                    <option value="Educação">Educação</option>
-                    <option value="Outros">Outros</option>
-                </select>
-                <input type="number" id="valor-limite" placeholder="Limite mensal (R$)" step="0.01" min="0.01" required>
-                <button type="submit" class="btn-primary">Definir</button>
-            </form>
-            <ul id="lista-limites" class="lista-limites"></ul>
+                <input type="number" id="input-salario" aria-labelledby="titulo-salario" placeholder="Ex: 4500.00" step="0.01" min="0">
             </div>
         </section>
 
-        <!-- Resumo Financeiro: as três informações numa única div, alinhadas -->
-        <section class="card resumo-card">
-            <div class="resumo-item">
-                <h3>Renda Total</h3>
-                <p id="res-renda">R$ 0,00</p>
+        <!-- Adicionar Gasto -->
+        <section class="card colapsavel">
+            <div class="card-cabecalho">
+                <h2>Adicionar Gasto</h2>
+                <button class="btn-colapsar" aria-label="Minimizar Adicionar Gasto" title="Minimizar/expandir">⌄</button>
             </div>
-            <div class="resumo-divisor"></div>
-            <div class="resumo-item">
-                <h3>Gastos Totais</h3>
-                <p id="res-gastos" class="text-danger">R$ 0,00</p>
+            <div class="card-corpo">
+                <form id="form-gasto" class="gasto-form">
+                    <input type="text" id="desc-gasto" placeholder="Descrição (Ex: Aluguel, Supermercado)" required>
+                    <input type="number" id="valor-gasto" placeholder="Valor (R$)" step="0.01" min="0.01" required>
+                    <select id="cat-gasto" required>
+                        <option value="" disabled selected>Selecione a Categoria</option>
+                        <option value="Moradia">Moradia</option>
+                        <option value="Alimentação">Alimentação</option>
+                        <option value="Transporte">Transporte</option>
+                        <option value="Lazer">Lazer</option>
+                        <option value="Saúde">Saúde</option>
+                        <option value="Estética">Estética</option>
+                        <option value="Assinaturas">Assinaturas</option>
+                        <option value="Educação">Educação</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                    <button type="submit" class="btn-primary">Adicionar</button>
+
+                    <!-- Tipo do gasto: define o que acontece com ele ao Fechar o Mês -->
+                    <div class="gasto-tipo-campos">
+                        <select id="tipo-gasto" title="Tipo de gasto">
+                            <option value="pontual" selected>Pontual (não repete)</option>
+                            <option value="fixo">Fixo (repete todo mês)</option>
+                            <option value="parcelado">Parcelado (cartão)</option>
+                        </select>
+                        <input type="number" id="parcelas-gasto" placeholder="Nº de parcelas" min="2" step="1" class="hidden" title="Quantidade total de parcelas">
+                    </div>
+                </form>
             </div>
-            <div class="resumo-divisor"></div>
-            <div class="resumo-item">
-                <h3>Saldo Restante</h3>
-                <p id="res-saldo" class="text-success">R$ 0,00</p>
+        </section>
+
+        <!-- Resumo Financeiro: título + as quatro informações alinhadas na mesma linha -->
+        <section class="card" id="card-resumo">
+            <div class="card-cabecalho">
+                <h2>Resumo</h2>
+            </div>
+            <div class="resumo-card">
+                <div class="resumo-item">
+                    <h3>Renda Total</h3>
+                    <p id="res-renda">R$ 0,00</p>
+                </div>
+                <div class="resumo-divisor"></div>
+                <div class="resumo-item">
+                    <h3>Gastos Totais</h3>
+                    <p id="res-gastos" class="text-danger">R$ 0,00</p>
+                </div>
+                <div class="resumo-divisor"></div>
+                <div class="resumo-item">
+                    <h3>Saldo Restante</h3>
+                    <p id="res-saldo" class="text-success">R$ 0,00</p>
+                </div>
+                <div class="resumo-divisor" id="resumo-divisor-livre"></div>
+                <div class="resumo-item hidden" id="resumo-item-livre">
+                    <h3>Livre p/ Gastar</h3>
+                    <p id="res-saldo-livre">R$ 0,00</p>
+                </div>
             </div>
         </section>
 
@@ -149,6 +143,33 @@
                 </form>
 
                 <ul id="lista-poupanca" class="lista-poupanca"></ul>
+            </div>
+        </section>
+
+        <!-- Limites por Categoria -->
+        <section class="card colapsavel">
+            <div class="card-cabecalho">
+                <h2>Limites por Categoria</h2>
+                <button class="btn-colapsar" aria-label="Minimizar Limites por Categoria" title="Minimizar/expandir">⌄</button>
+            </div>
+            <div class="card-corpo">
+                <form id="form-limite" class="limite-form">
+                    <select id="cat-limite" required>
+                        <option value="" disabled selected>Categoria</option>
+                        <option value="Moradia">Moradia</option>
+                        <option value="Alimentação">Alimentação</option>
+                        <option value="Transporte">Transporte</option>
+                        <option value="Lazer">Lazer</option>
+                        <option value="Saúde">Saúde</option>
+                        <option value="Estética">Estética</option>
+                        <option value="Assinaturas">Assinaturas</option>
+                        <option value="Educação">Educação</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                    <input type="number" id="valor-limite" placeholder="Limite mensal (R$)" step="0.01" min="0.01" required>
+                    <button type="submit" class="btn-primary">Definir</button>
+                </form>
+                <ul id="lista-limites" class="lista-limites"></ul>
             </div>
         </section>
 
