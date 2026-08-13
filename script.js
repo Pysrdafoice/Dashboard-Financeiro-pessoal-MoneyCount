@@ -26,6 +26,7 @@ const COR_PADRAO = '#cbd5e1';
 // Instâncias dos Gráficos
 let pieChartInstance = null;
 let lineChartInstance = null;
+let guardadoChartInstance = null;
 let detalheChartInstance = null;
 
 // Elementos do DOM
@@ -97,7 +98,7 @@ const carrosselVariacao = document.getElementById('carrossel-variacao');
 const carrosselSlides = document.querySelectorAll('.carrossel-slide');
 const legendaPizza = document.getElementById('legenda-pizza');
 
-const TITULOS_SLIDES = ['Distribuição por Categoria', 'Evolução Histórica'];
+const TITULOS_SLIDES = ['Distribuição por Categoria', 'Evolução Histórica', 'Evolução do Guardado'];
 let slideAtual = 0;
 
 // Inicialização
@@ -193,6 +194,7 @@ function inicializarSecoesColapsaveis() {
         requestAnimationFrame(() => {
           if (slideAtual === 0 && pieChartInstance) pieChartInstance.resize();
           if (slideAtual === 1 && lineChartInstance) lineChartInstance.resize();
+          if (slideAtual === 2 && guardadoChartInstance) guardadoChartInstance.resize();
         });
       }
     });
@@ -298,6 +300,7 @@ function atualizarInterface() {
   renderizarExtrato();
   renderizarGraficoPizza();
   renderizarGraficoLinha();
+  renderizarGraficoGuardado();
   renderizarListaLimites();
   renderizarPoupanca();
 }
@@ -380,6 +383,20 @@ function calcularSaldoPoupanca() {
 }
 
 /**
+ * Movimento líquido de poupança (depósitos menos retiradas) dentro de um
+ * mês/ano específico. Função genérica usada tanto pelo mês atual quanto
+ * por qualquer mês já fechado no histórico.
+ */
+function calcularMovimentoPoupancaDoMes(mesIndex, ano) {
+  return estado.poupanca.reduce((acc, mov) => {
+    const dataMov = new Date(mov.data);
+    const mesmoMes = dataMov.getMonth() === mesIndex && dataMov.getFullYear() === ano;
+    if (!mesmoMes) return acc;
+    return mov.tipo === 'retirada' ? acc - mov.valor : acc + mov.valor;
+  }, 0);
+}
+
+/**
  * Movimento líquido de poupança dentro do mês/ano atual (depósitos menos
  * retiradas). Usado só para calcular o "Saldo Livre" — de propósito NÃO
  * usa o saldo total acumulado, porque "Guardado" nunca zera ao Fechar o
@@ -389,14 +406,32 @@ function calcularSaldoPoupanca() {
  */
 function calcularMovimentoPoupancaMesAtual() {
   const agora = new Date();
-  return estado.poupanca.reduce((acc, mov) => {
-    const dataMov = new Date(mov.data);
-    const mesmoMes =
-      dataMov.getMonth() === agora.getMonth() &&
-      dataMov.getFullYear() === agora.getFullYear();
-    if (!mesmoMes) return acc;
-    return mov.tipo === 'retirada' ? acc - mov.valor : acc + mov.valor;
-  }, 0);
+  return calcularMovimentoPoupancaDoMes(agora.getMonth(), agora.getFullYear());
+}
+
+/** Converte "8/2026" em { mesIndex: 7, ano: 2026, ordem: 24319 } (ordem serve pra ordenar cronologicamente). */
+function parseMesChave(mesStr) {
+  const [mes, ano] = mesStr.split('/').map(Number);
+  return { mesIndex: mes - 1, ano, ordem: ano * 12 + mes };
+}
+
+/**
+ * Calcula o valor "guardado ajustado" de um mês: o quanto foi guardado,
+ * penalizado quando o Saldo Livre daquele mês ficou negativo. A ideia é
+ * que guardar dinheiro enquanto se está no vermelho não deveria contar
+ * como progresso real de educação financeira — o gráfico precisa refletir
+ * isso, não só mostrar "quanto foi depositado".
+ */
+function calcularGuardadoAjustado(mesIndex, ano, salario, totalGastos) {
+  const movimentoMes = calcularMovimentoPoupancaDoMes(mesIndex, ano);
+  const saldoRestante = salario - totalGastos;
+  const saldoLivre = saldoRestante - movimentoMes;
+
+  // Só penaliza quando o saldo livre é negativo; do contrário o valor
+  // ajustado é igual ao valor bruto guardado naquele mês.
+  const guardadoAjustado = saldoLivre < 0 ? movimentoMes - Math.abs(saldoLivre) : movimentoMes;
+
+  return { movimentoMes, saldoLivre, guardadoAjustado };
 }
 
 function registrarMovimentoPoupanca() {
@@ -461,6 +496,7 @@ function atualizarSaldoLivre() {
 function renderizarPoupanca() {
   poupancaSaldo.textContent = formatarMoeda(calcularSaldoPoupanca());
   atualizarSaldoLivre();
+  renderizarGraficoGuardado();
 
   listaPoupanca.innerHTML = '';
 
@@ -727,6 +763,116 @@ function renderizarGraficoLinha() {
         },
         y: {
           ticks: { color: corTextoGrafico(), font: { size: 11 } },
+          grid: { color: corGradeGrafico() },
+        },
+      },
+    },
+  });
+}
+
+/**
+ * Gráfico de linhas: quanto foi guardado por mês (linha cheia) vs. o
+ * valor ajustado (linha tracejada), que é penalizado nos meses em que o
+ * Saldo Livre p/ Gastar ficou negativo. A ideia é dar um retrato visual
+ * de "estou realmente evoluindo financeiramente, ou só empurrando o
+ * problema pra depois?" — guardar dinheiro estando no vermelho não deveria
+ * parecer progresso.
+ */
+function renderizarGraficoGuardado() {
+  const ctx = document.getElementById('guardadoChart').getContext('2d');
+
+  // Meses já fechados no histórico, ordenados cronologicamente
+  const mesesFechados = [...estado.historico].sort(
+    (a, b) => parseMesChave(a.mes).ordem - parseMesChave(b.mes).ordem,
+  );
+
+  const pontos = mesesFechados.map((h) => {
+    const { mesIndex, ano } = parseMesChave(h.mes);
+    const { movimentoMes, guardadoAjustado } = calcularGuardadoAjustado(
+      mesIndex,
+      ano,
+      h.salario,
+      h.totalGastos,
+    );
+    return { label: h.mes, bruto: movimentoMes, ajustado: guardadoAjustado };
+  });
+
+  // Acrescenta o mês corrente (ainda não fechado) como último ponto,
+  // usando os totais ao vivo — mesma lógica usada no card de Resumo
+  const agora = new Date();
+  const { totalGastos } = calcularTotais();
+  const { movimentoMes: brutoAtual, guardadoAjustado: ajustadoAtual } = calcularGuardadoAjustado(
+    agora.getMonth(),
+    agora.getFullYear(),
+    estado.salario,
+    totalGastos,
+  );
+  pontos.push({
+    label: `${agora.getMonth() + 1}/${agora.getFullYear()} (atual)`,
+    bruto: brutoAtual,
+    ajustado: ajustadoAtual,
+  });
+
+  const labels = pontos.map((p) => p.label);
+  const dadosBrutos = pontos.map((p) => p.bruto);
+  const dadosAjustados = pontos.map((p) => p.ajustado);
+
+  const larguraMinima = Math.max(320, labels.length * 110);
+  document.querySelector('#guardadoChart').closest('.historico-chart-wrap').style.minWidth = `${larguraMinima}px`;
+
+  const chartData = {
+    labels,
+    datasets: [
+      {
+        label: 'Guardado no mês',
+        data: dadosBrutos,
+        borderColor: '#0f766e',
+        backgroundColor: '#0f766e',
+        tension: 0.25,
+        borderWidth: 2,
+      },
+      {
+        label: 'Guardado ajustado',
+        data: dadosAjustados,
+        borderColor: '#f59e0b',
+        backgroundColor: '#f59e0b',
+        borderDash: [6, 4],
+        tension: 0.25,
+        borderWidth: 2,
+      },
+    ],
+  };
+
+  if (guardadoChartInstance) {
+    guardadoChartInstance.data.labels = chartData.labels;
+    guardadoChartInstance.data.datasets = chartData.datasets;
+    guardadoChartInstance.update();
+    return;
+  }
+
+  guardadoChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: chartData,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: corTextoGrafico(), boxWidth: 12, font: { size: 11 } },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: corTextoGrafico(), font: { size: 11 } },
+          grid: { display: false },
+        },
+        y: {
+          ticks: {
+            color: corTextoGrafico(),
+            font: { size: 11 },
+            callback: (value) => formatarMoeda(value),
+          },
           grid: { color: corGradeGrafico() },
         },
       },
@@ -1125,6 +1271,7 @@ function irParaSlide(indice) {
   requestAnimationFrame(() => {
     if (slideAtual === 0 && pieChartInstance) pieChartInstance.resize();
     if (slideAtual === 1 && lineChartInstance) lineChartInstance.resize();
+    if (slideAtual === 2 && guardadoChartInstance) guardadoChartInstance.resize();
   });
 }
 
@@ -1221,6 +1368,10 @@ function recriarGraficosComTemaAtual() {
     lineChartInstance.destroy();
     lineChartInstance = null;
   }
+  if (guardadoChartInstance) {
+    guardadoChartInstance.destroy();
+    guardadoChartInstance = null;
+  }
   if (detalheChartInstance) {
     detalheChartInstance.destroy();
     detalheChartInstance = null;
@@ -1228,6 +1379,7 @@ function recriarGraficosComTemaAtual() {
 
   renderizarGraficoPizza();
   renderizarGraficoLinha();
+  renderizarGraficoGuardado();
 
   // Se o modal de detalhamento estiver aberto, recria o gráfico dele também
   if (!modalOverlay.classList.contains('hidden') && categoriaAtualModal) {
