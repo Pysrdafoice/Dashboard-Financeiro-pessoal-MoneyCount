@@ -5,6 +5,7 @@ let estado = {
   historico: [],
   limites: {}, // { 'Categoria': valorLimiteMensal }
   poupanca: [], // [{ id, tipo: 'deposito'|'retirada', valor, descricao, data }]
+  streak: { dias: 0, melhorStreak: 0, ultimaData: null }, // ultimaData: 'YYYY-MM-DD'
 };
 
 // Mapa de cores fixo por categoria (mantém consistência visual mês a mês)
@@ -38,6 +39,11 @@ const catGasto = document.getElementById('cat-gasto');
 const tipoGasto = document.getElementById('tipo-gasto');
 const parcelasGasto = document.getElementById('parcelas-gasto');
 const listaTransacoes = document.getElementById('lista-transacoes');
+
+// Elementos do Banner Emocional
+const streakBadge = document.getElementById('streak-badge');
+const streakNumero = document.getElementById('streak-numero');
+const fraseEmocional = document.getElementById('frase-emocional');
 
 // Elementos de Poupança / Guardado
 const formPoupanca = document.getElementById('form-poupanca');
@@ -243,6 +249,7 @@ function adicionarGasto() {
   }
 
   estado.gastos.push(novoGasto);
+  registrarAtividadeStreak();
   salvarDados();
   atualizarInterface();
   formGasto.reset();
@@ -303,6 +310,7 @@ function atualizarInterface() {
   renderizarGraficoGuardado();
   renderizarListaLimites();
   renderizarPoupanca();
+  renderizarBannerEmocional();
 }
 
 // ---- Limites por Categoria ----
@@ -407,6 +415,69 @@ function calcularMovimentoPoupancaDoMes(mesIndex, ano) {
 function calcularMovimentoPoupancaMesAtual() {
   const agora = new Date();
   return calcularMovimentoPoupancaDoMes(agora.getMonth(), agora.getFullYear());
+}
+
+// ---- Streak (dias seguidos anotando gastos) e Frase Emocional ----
+
+function formatarDataISO(data) {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, '0');
+  const dia = String(data.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
+
+function registrarAtividadeStreak() {
+  const hoje = formatarDataISO(new Date());
+  if (estado.streak.ultimaData === hoje) return;
+
+  const ontem = formatarDataISO(new Date(Date.now() - 86400000));
+  estado.streak.dias = estado.streak.ultimaData === ontem ? estado.streak.dias + 1 : 1;
+  estado.streak.ultimaData = hoje;
+  estado.streak.melhorStreak = Math.max(estado.streak.melhorStreak, estado.streak.dias);
+}
+
+function calcularExibicaoStreak() {
+  if (!estado.streak.ultimaData) return { dias: 0, ativo: false };
+  const hoje = formatarDataISO(new Date());
+  const ontem = formatarDataISO(new Date(Date.now() - 86400000));
+  const streakValido = estado.streak.ultimaData === hoje || estado.streak.ultimaData === ontem;
+  return { dias: streakValido ? estado.streak.dias : 0, ativo: streakValido };
+}
+
+function gerarFraseEmocional() {
+  if (estado.gastos.length === 0 && estado.historico.length === 0 && estado.poupanca.length === 0) {
+    return 'Bem-vindo(a)! Comece registrando seu primeiro gasto — leva só alguns segundos. 🚀';
+  }
+
+  const { totalGastos } = calcularTotais();
+  const mesAnterior = estado.historico[estado.historico.length - 1];
+  const variacaoGastos = mesAnterior
+    ? calcularVariacaoPercentual(totalGastos, mesAnterior.totalGastos)
+    : null;
+  const guardadoMes = calcularMovimentoPoupancaMesAtual();
+
+  if (variacaoGastos !== null && variacaoGastos < -3) {
+    return `Você gastou ${Math.abs(variacaoGastos).toFixed(0)}% a menos que o mês passado. Continue assim! 💪`;
+  }
+  if (guardadoMes > 0) {
+    return `Você já guardou ${formatarMoeda(guardadoMes)} este mês. Cada real conta! 🐷`;
+  }
+  if (variacaoGastos !== null && variacaoGastos > 15) {
+    return `Seus gastos subiram ${variacaoGastos.toFixed(0)}% em relação ao mês passado — vale revisar as categorias.`;
+  }
+  if (variacaoGastos !== null) {
+    return 'Seus gastos estão praticamente estáveis em relação ao mês passado.';
+  }
+  return 'Continue registrando seus gastos para acompanhar sua evolução financeira.';
+}
+
+function renderizarBannerEmocional() {
+  const { dias, ativo } = calcularExibicaoStreak();
+  streakBadge.classList.toggle('hidden', !(ativo && dias > 0));
+  if (ativo && dias > 0) {
+    streakNumero.textContent = dias;
+  }
+  fraseEmocional.textContent = gerarFraseEmocional();
 }
 
 /** Converte "8/2026" em { mesIndex: 7, ano: 2026, ordem: 24319 } (ordem serve pra ordenar cronologicamente). */
@@ -1075,11 +1146,22 @@ function carregarDados() {
             ? parsed.limites
             : {},
         poupanca: Array.isArray(parsed.poupanca) ? parsed.poupanca : [],
+        streak:
+          parsed.streak && typeof parsed.streak === 'object'
+            ? parsed.streak
+            : { dias: 0, melhorStreak: 0, ultimaData: null },
       };
     }
   } catch (e) {
     console.error('Dados corrompidos no localStorage, iniciando do zero.', e);
-    estado = { salario: 0, gastos: [], historico: [], limites: {}, poupanca: [] };
+    estado = {
+      salario: 0,
+      gastos: [],
+      historico: [],
+      limites: {},
+      poupanca: [],
+      streak: { dias: 0, melhorStreak: 0, ultimaData: null },
+    };
   }
 }
 
@@ -1158,6 +1240,10 @@ function importarBackup(e) {
         historico: Array.isArray(dados.historico) ? dados.historico : [],
         limites: dados.limites && typeof dados.limites === 'object' ? dados.limites : {},
         poupanca: Array.isArray(dados.poupanca) ? dados.poupanca : [],
+        streak:
+          dados.streak && typeof dados.streak === 'object'
+            ? dados.streak
+            : { dias: 0, melhorStreak: 0, ultimaData: null },
       };
 
       salvarDados();

@@ -46,18 +46,16 @@
     </div>
 
     <main class="container">
-        <!-- Configuração do Mês: o próprio label do campo serve de título -->
-        <section class="card colapsavel">
-            <div class="card-cabecalho">
-                <h2 id="titulo-salario">Salário Bruto / Renda Base (R$):</h2>
-                <button class="btn-colapsar" aria-label="Minimizar Salário" title="Minimizar/expandir">⌄</button>
+        <!-- Banner emocional: frase de progresso + streak de dias seguidos anotando gastos -->
+        <section id="banner-emocional" class="banner-emocional">
+            <div id="streak-badge" class="streak-badge hidden">
+                <span class="streak-fogo">🔥</span>
+                <span><strong id="streak-numero">0</strong> dia(s) seguido(s) anotando gastos</span>
             </div>
-            <div class="card-corpo">
-                <input type="number" id="input-salario" aria-labelledby="titulo-salario" placeholder="Ex: 4500.00" step="0.01" min="0">
-            </div>
+            <p id="frase-emocional" class="frase-emocional"></p>
         </section>
 
-        <!-- Adicionar Gasto -->
+        <!-- Adicionar Gasto: é a ação do dia a dia, por isso fica antes da configuração -->
         <section class="card colapsavel">
             <div class="card-cabecalho">
                 <h2>Adicionar Gasto</h2>
@@ -91,6 +89,17 @@
                         <input type="number" id="parcelas-gasto" placeholder="Nº de parcelas" min="2" step="1" class="hidden" title="Quantidade total de parcelas">
                     </div>
                 </form>
+            </div>
+        </section>
+
+        <!-- Configuração do Mês: o próprio label do campo serve de título -->
+        <section class="card colapsavel">
+            <div class="card-cabecalho">
+                <h2 id="titulo-salario">Salário Bruto / Renda Base (R$):</h2>
+                <button class="btn-colapsar" aria-label="Minimizar Salário" title="Minimizar/expandir">⌄</button>
+            </div>
+            <div class="card-corpo">
+                <input type="number" id="input-salario" aria-labelledby="titulo-salario" placeholder="Ex: 4500.00" step="0.01" min="0">
             </div>
         </section>
 

@@ -140,6 +140,38 @@ img, canvas {
   gap: 24px;
 }
 
+/* ---- Banner Emocional (frase de progresso + streak) ---- */
+.banner-emocional {
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.1), rgba(245, 158, 11, 0.1));
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  text-align: center;
+}
+
+.streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  color: var(--text-main);
+  margin-bottom: 8px;
+}
+
+.streak-fogo {
+  font-size: 1rem;
+}
+
+.frase-emocional {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
 .card {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
