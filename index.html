@@ -92,6 +92,38 @@
             </div>
         </section>
 
+        <!-- Adicionar Ganho: ganhos extras, além do Salário Base -->
+        <section class="card colapsavel">
+            <div class="card-cabecalho">
+                <h2>Adicionar Ganho</h2>
+                <button class="btn-colapsar" aria-label="Minimizar Adicionar Ganho" title="Minimizar/expandir">⌄</button>
+            </div>
+            <div class="card-corpo">
+                <form id="form-ganho" class="gasto-form">
+                    <input type="text" id="desc-ganho" placeholder="Descrição (Ex: Freelance, Venda)" required>
+                    <input type="number" id="valor-ganho" placeholder="Valor (R$)" step="0.01" min="0.01" required>
+                    <select id="cat-ganho" required>
+                        <option value="" disabled selected>Selecione a Categoria</option>
+                        <option value="Freelance">Freelance</option>
+                        <option value="Vendas">Vendas</option>
+                        <option value="Cashback/Reembolso">Cashback/Reembolso</option>
+                        <option value="Rendimentos">Rendimentos</option>
+                        <option value="Presente">Presente</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                    <button type="submit" class="btn-primary">Adicionar</button>
+
+                    <!-- Tipo do ganho: Fixo se repete todo mês ao Fechar o Mês -->
+                    <div class="gasto-tipo-campos">
+                        <select id="tipo-ganho" title="Tipo de ganho">
+                            <option value="pontual" selected>Pontual (não repete)</option>
+                            <option value="fixo">Fixo (repete todo mês)</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </section>
+
         <!-- Configuração do Mês: o próprio label do campo serve de título -->
         <section class="card colapsavel">
             <div class="card-cabecalho">
@@ -179,6 +211,17 @@
                     <button type="submit" class="btn-primary">Definir</button>
                 </form>
                 <ul id="lista-limites" class="lista-limites"></ul>
+            </div>
+        </section>
+
+        <!-- Extrato de Ganhos -->
+        <section class="card colapsavel">
+            <div class="card-cabecalho">
+                <h2>Ganhos do Mês</h2>
+                <button class="btn-colapsar" aria-label="Minimizar Ganhos do Mês" title="Minimizar/expandir">⌄</button>
+            </div>
+            <div class="card-corpo">
+                <div id="lista-ganhos" class="transacoes-lista"></div>
             </div>
         </section>
 

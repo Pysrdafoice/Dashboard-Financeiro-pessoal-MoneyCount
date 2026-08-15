@@ -494,6 +494,16 @@ select:focus {
   gap: 8px;
 }
 
+/* Variante para Ganhos: ícone e valor em verde, pra diferenciar de Gastos
+   sem precisar duplicar toda a estrutura de card */
+.transacao-card--ganho .transacao-card__icon {
+  background: rgba(5, 150, 105, 0.12);
+}
+
+.transacao-card--ganho .transacao-card__valor strong {
+  color: var(--success);
+}
+
 .btn-remover-transacao {
   padding: 4px 8px;
   font-size: 0.78rem;

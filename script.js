@@ -2,6 +2,7 @@
 let estado = {
   salario: 0,
   gastos: [],
+  ganhos: [], // [{ id, descricao, categoria, valor, tipo: 'pontual'|'fixo' }]
   historico: [],
   limites: {}, // { 'Categoria': valorLimiteMensal }
   poupanca: [], // [{ id, tipo: 'deposito'|'retirada', valor, descricao, data }]
@@ -38,6 +39,14 @@ const valorGasto = document.getElementById('valor-gasto');
 const catGasto = document.getElementById('cat-gasto');
 const tipoGasto = document.getElementById('tipo-gasto');
 const parcelasGasto = document.getElementById('parcelas-gasto');
+
+// Elementos de Adicionar Ganho
+const formGanho = document.getElementById('form-ganho');
+const descGanho = document.getElementById('desc-ganho');
+const valorGanho = document.getElementById('valor-ganho');
+const catGanho = document.getElementById('cat-ganho');
+const tipoGanho = document.getElementById('tipo-ganho');
+const listaGanhos = document.getElementById('lista-ganhos');
 const listaTransacoes = document.getElementById('lista-transacoes');
 
 // Elementos do Banner Emocional
@@ -113,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
   carregarDados();
   atualizarInterface();
   inicializarCarrossel();
+  mostrarAlertaStreak();
 
   btnTema.addEventListener('click', alternarTema);
 
@@ -126,6 +136,11 @@ document.addEventListener('DOMContentLoaded', () => {
   formGasto.addEventListener('submit', (e) => {
     e.preventDefault();
     adicionarGasto();
+  });
+
+  formGanho.addEventListener('submit', (e) => {
+    e.preventDefault();
+    adicionarGanho();
   });
 
   formPoupanca.addEventListener('submit', (e) => {
@@ -274,10 +289,50 @@ function removerGasto(id) {
   }
 }
 
+function adicionarGanho() {
+  const valor = parseFloat(valorGanho.value);
+  const descricao = descGanho.value.trim();
+  const tipo = tipoGanho.value; // 'pontual' | 'fixo'
+
+  if (!descricao) {
+    alert('Digite uma descrição para o ganho.');
+    return;
+  }
+  if (isNaN(valor) || valor <= 0) {
+    alert('Digite um valor válido, maior que zero.');
+    return;
+  }
+  if (!catGanho.value) {
+    alert('Selecione uma categoria.');
+    return;
+  }
+
+  estado.ganhos.push({
+    id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+    descricao: descricao,
+    categoria: catGanho.value,
+    valor: valor,
+    tipo: tipo,
+  });
+
+  registrarAtividadeStreak();
+  salvarDados();
+  atualizarInterface();
+  formGanho.reset();
+}
+
+function removerGanho(id) {
+  estado.ganhos = estado.ganhos.filter((g) => g.id !== id);
+  salvarDados();
+  atualizarInterface();
+}
+
 function calcularTotais() {
   const totalGastos = estado.gastos.reduce((acc, curr) => acc + curr.valor, 0);
-  const saldoRestante = estado.salario - totalGastos;
-  return { totalGastos, saldoRestante };
+  const totalGanhosExtras = estado.ganhos.reduce((acc, curr) => acc + curr.valor, 0);
+  const rendaTotal = estado.salario + totalGanhosExtras;
+  const saldoRestante = rendaTotal - totalGastos;
+  return { totalGastos, totalGanhosExtras, rendaTotal, saldoRestante };
 }
 
 function atualizarInterface() {
@@ -291,9 +346,9 @@ function atualizarInterface() {
     inputSalario.value = estado.salario ? estado.salario : '';
   }
 
-  const { totalGastos, saldoRestante } = calcularTotais();
+  const { totalGastos, rendaTotal, saldoRestante } = calcularTotais();
 
-  resRenda.textContent = formatarMoeda(estado.salario);
+  resRenda.textContent = formatarMoeda(rendaTotal);
   resGastos.textContent = formatarMoeda(totalGastos);
   resSaldo.textContent = formatarMoeda(saldoRestante);
 
@@ -305,6 +360,7 @@ function atualizarInterface() {
   }
 
   renderizarExtrato();
+  renderizarExtratoGanhos();
   renderizarGraficoPizza();
   renderizarGraficoLinha();
   renderizarGraficoGuardado();
@@ -444,8 +500,22 @@ function calcularExibicaoStreak() {
   return { dias: streakValido ? estado.streak.dias : 0, ativo: streakValido };
 }
 
+// Alerta exibido uma única vez ao abrir o app, mostrando a sequência
+// mesmo quando está zerada (diferente do badge no banner, que some
+// quando não há sequência ativa, pra não soar como cobrança).
+function mostrarAlertaStreak() {
+  const { dias, ativo } = calcularExibicaoStreak();
+  const diasExibidos = ativo ? dias : 0;
+  alert(`🔥 ${diasExibidos} dia(s) seguido(s) anotando gastos`);
+}
+
 function gerarFraseEmocional() {
-  if (estado.gastos.length === 0 && estado.historico.length === 0 && estado.poupanca.length === 0) {
+  if (
+    estado.gastos.length === 0 &&
+    estado.ganhos.length === 0 &&
+    estado.historico.length === 0 &&
+    estado.poupanca.length === 0
+  ) {
     return 'Bem-vindo(a)! Comece registrando seu primeiro gasto — leva só alguns segundos. 🚀';
   }
 
@@ -668,6 +738,54 @@ function pegarSeloTipoGasto(gasto) {
   return '';
 }
 
+function renderizarExtratoGanhos() {
+  listaGanhos.innerHTML = '';
+
+  if (estado.ganhos.length === 0) {
+    listaGanhos.innerHTML = `
+      <div class="transacao-vazio">Nenhum ganho cadastrado.</div>
+    `;
+    return;
+  }
+
+  estado.ganhos.forEach((ganho) => {
+    const card = document.createElement('article');
+    const icone = pegarIconeCategoriaGanho(ganho.categoria);
+    const selo = ganho.tipo === 'fixo' ? ' <span class="selo-tipo selo-fixo">Fixo</span>' : '';
+    card.className = 'transacao-card transacao-card--ganho';
+    card.innerHTML = `
+      <div class="transacao-card__icon" aria-hidden="true">${icone}</div>
+      <div class="transacao-card__info">
+        <strong>${escapeHTML(ganho.descricao)}${selo}</strong>
+        <span>${escapeHTML(ganho.categoria)}</span>
+      </div>
+      <div class="transacao-card__valor">
+        <strong>+ ${formatarMoeda(ganho.valor)}</strong>
+        <button class="btn-secondary btn-remover-transacao" title="Excluir ganho" aria-label="Excluir ganho de ${escapeHTML(ganho.descricao)}">Excluir</button>
+      </div>
+    `;
+
+    card.querySelector('.btn-remover-transacao').addEventListener('click', () => {
+      removerGanho(ganho.id);
+    });
+
+    listaGanhos.appendChild(card);
+  });
+}
+
+function pegarIconeCategoriaGanho(categoria) {
+  const icones = {
+    Freelance: '💻',
+    Vendas: '🛍️',
+    'Cashback/Reembolso': '💳',
+    Rendimentos: '📈',
+    Presente: '🎁',
+    Outros: '➕',
+  };
+
+  return icones[categoria] || '💰';
+}
+
 // Renderização de Gráficos com Chart.js
 function renderizarGraficoPizza() {
   const ctx = document.getElementById('pieChart').getContext('2d');
@@ -787,15 +905,17 @@ function renderizarGraficoLinha() {
   const ctx = document.getElementById('lineChart').getContext('2d');
 
   const labels = estado.historico.map((h) => h.mes);
-  const dadosSalario = estado.historico.map((h) => h.salario);
+  // h.rendaTotal é o campo novo (salário + ganhos extras); h.salario cobre
+  // meses fechados antes dessa mudança, que só guardavam o salário puro.
+  const dadosRenda = estado.historico.map((h) => (h.rendaTotal !== undefined ? h.rendaTotal : h.salario));
   const dadosGastos = estado.historico.map((h) => h.totalGastos);
 
   const chartData = {
     labels: labels.length ? labels : ['Mês Atual (Pendente)'],
     datasets: [
       {
-        label: 'Orçamento/Salário',
-        data: labels.length ? dadosSalario : [estado.salario],
+        label: 'Renda Total',
+        data: labels.length ? dadosRenda : [calcularTotais().rendaTotal],
         backgroundColor: '#0f766e',
         borderRadius: 4,
       },
@@ -859,10 +979,11 @@ function renderizarGraficoGuardado() {
 
   const pontos = mesesFechados.map((h) => {
     const { mesIndex, ano } = parseMesChave(h.mes);
+    const rendaDoMes = h.rendaTotal !== undefined ? h.rendaTotal : h.salario;
     const { movimentoMes, guardadoAjustado } = calcularGuardadoAjustado(
       mesIndex,
       ano,
-      h.salario,
+      rendaDoMes,
       h.totalGastos,
     );
     return { label: h.mes, bruto: movimentoMes, ajustado: guardadoAjustado };
@@ -871,11 +992,11 @@ function renderizarGraficoGuardado() {
   // Acrescenta o mês corrente (ainda não fechado) como último ponto,
   // usando os totais ao vivo — mesma lógica usada no card de Resumo
   const agora = new Date();
-  const { totalGastos } = calcularTotais();
+  const { totalGastos, rendaTotal } = calcularTotais();
   const { movimentoMes: brutoAtual, guardadoAjustado: ajustadoAtual } = calcularGuardadoAjustado(
     agora.getMonth(),
     agora.getFullYear(),
-    estado.salario,
+    rendaTotal,
     totalGastos,
   );
   pontos.push({
@@ -1079,7 +1200,7 @@ function renderizarGraficoDetalhe(itens, categoria) {
 }
 
 function fecharMes() {
-  const { totalGastos } = calcularTotais();
+  const { totalGastos, totalGanhosExtras, rendaTotal } = calcularTotais();
   const dataAtual = new Date();
   const nomeMes = `${dataAtual.getMonth() + 1}/${dataAtual.getFullYear()}`;
 
@@ -1089,6 +1210,8 @@ function fecharMes() {
   estado.historico.push({
     mes: nomeMes,
     salario: estado.salario,
+    totalGanhosExtras: totalGanhosExtras,
+    rendaTotal: rendaTotal,
     totalGastos: totalGastos,
   });
 
@@ -1118,9 +1241,12 @@ function fecharMes() {
 
   estado.gastos = novosGastos;
 
+  // 3. Mesma lógica pros Ganhos: Pontuais somem, Fixos (ex: um freela recorrente) continuam
+  estado.ganhos = estado.ganhos.filter((ganho) => ganho.tipo === 'fixo');
+
   salvarDados();
   atualizarInterface();
-  alert('Mês fechado! Gastos fixos e parcelas ativas já estão prontos para o novo mês.');
+  alert('Mês fechado! Gastos e ganhos fixos, além de parcelas ativas, já estão prontos para o novo mês.');
 }
 
 // Persistência local (LocalStorage) com tratamento de erro
@@ -1140,6 +1266,7 @@ function carregarDados() {
       estado = {
         salario: typeof parsed.salario === 'number' ? parsed.salario : 0,
         gastos: Array.isArray(parsed.gastos) ? parsed.gastos : [],
+        ganhos: Array.isArray(parsed.ganhos) ? parsed.ganhos : [],
         historico: Array.isArray(parsed.historico) ? parsed.historico : [],
         limites:
           parsed.limites && typeof parsed.limites === 'object'
@@ -1157,6 +1284,7 @@ function carregarDados() {
     estado = {
       salario: 0,
       gastos: [],
+      ganhos: [],
       historico: [],
       limites: {},
       poupanca: [],
@@ -1237,6 +1365,7 @@ function importarBackup(e) {
       estado = {
         salario: typeof dados.salario === 'number' ? dados.salario : 0,
         gastos: Array.isArray(dados.gastos) ? dados.gastos : [],
+        ganhos: Array.isArray(dados.ganhos) ? dados.ganhos : [],
         historico: Array.isArray(dados.historico) ? dados.historico : [],
         limites: dados.limites && typeof dados.limites === 'object' ? dados.limites : {},
         poupanca: Array.isArray(dados.poupanca) ? dados.poupanca : [],
