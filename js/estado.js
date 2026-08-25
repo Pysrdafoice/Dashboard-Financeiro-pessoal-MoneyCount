@@ -1,15 +1,15 @@
-// ============================================================================
-// ESTADO DA APLICAÇÃO
-// Arquivo: js/estado.js
-// Responsabilidade: Objeto estado (fonte única de verdade) + funções de
-// transformação do estado
-// ============================================================================
-
 /**
- * Objeto estado — fonte única de verdade da aplicação.
- * Mantém sincronizado com localStorage via salvarDados() e carregarDados().
+ * estado.js — a única fonte de verdade do FuelCount.
+ *
+ * `estado` é um objeto mutável exportado por referência: todo módulo que
+ * importar `estado` daqui enxerga sempre a versão mais atual, porque
+ * ninguém tem uma cópia — todos apontam pro mesmo objeto na memória.
+ *
+ * Isso é diferente de exportar uma função `getEstado()`: com objeto
+ * mutável, `estado.gastos.push(x)` em qualquer módulo já reflete em todos
+ * os outros sem precisar de nenhum mecanismo de sincronização.
  */
-let estado = {
+export let estado = {
   salario: 0,
   gastos: [],
   ganhos: [], // [{ id, descricao, categoria, valor, tipo: 'pontual'|'fixo' }]
@@ -20,9 +20,20 @@ let estado = {
 };
 
 /**
- * Estado vazio — retorna um objeto estado limpo (usado em reset).
+ * Substitui o estado inteiro por um novo objeto (usado por carregarDados()
+ * e importarBackup(), que precisam trocar tudo de uma vez, não só um campo).
+ * Só existe porque `export let` não permite reatribuição de fora do módulo
+ * — só o próprio módulo pode fazer `estado = novoValor`.
  */
-function estadoVazio() {
+export function substituirEstado(novoEstado) {
+  estado = novoEstado;
+}
+
+/**
+ * Estado inicial "vazio" — usado tanto como ponto de partida de um app novo
+ * quanto como fallback de segurança quando os dados salvos estão corrompidos.
+ */
+export function estadoVazio() {
   return {
     salario: 0,
     gastos: [],
@@ -35,87 +46,23 @@ function estadoVazio() {
 }
 
 /**
- * Substitui o estado global por um novo objeto (normalmente após carregar do localStorage
- * ou restaurar um backup). Valida tipos básicos.
+ * Recebe um objeto qualquer (vindo do localStorage ou de um arquivo de
+ * backup importado) e devolve um estado válido, preenchendo com valores
+ * padrão qualquer campo ausente ou de tipo errado. Extraída aqui porque
+ * carregarDados() e importarBackup() precisavam exatamente da mesma
+ * validação — antes essa lógica estava copiada e colada nos dois lugares.
  */
-function substituirEstado(novoEstado) {
-  if (!novoEstado || typeof novoEstado !== 'object') {
-    console.error('Estado inválido fornecido a substituirEstado()');
-    return;
-  }
+export function normalizarEstado(bruto) {
+  const vazio = estadoVazio();
+  if (!bruto || typeof bruto !== 'object') return vazio;
 
-  estado = {
-    salario: typeof novoEstado.salario === 'number' ? novoEstado.salario : 0,
-    gastos: Array.isArray(novoEstado.gastos) ? novoEstado.gastos : [],
-    ganhos: Array.isArray(novoEstado.ganhos) ? novoEstado.ganhos : [],
-    historico: Array.isArray(novoEstado.historico) ? novoEstado.historico : [],
-    limites:
-      novoEstado.limites && typeof novoEstado.limites === 'object'
-        ? novoEstado.limites
-        : {},
-    poupanca: Array.isArray(novoEstado.poupanca) ? novoEstado.poupanca : [],
-    streak:
-      novoEstado.streak && typeof novoEstado.streak === 'object'
-        ? novoEstado.streak
-        : { dias: 0, melhorStreak: 0, ultimaData: null },
+  return {
+    salario: typeof bruto.salario === 'number' ? bruto.salario : vazio.salario,
+    gastos: Array.isArray(bruto.gastos) ? bruto.gastos : vazio.gastos,
+    ganhos: Array.isArray(bruto.ganhos) ? bruto.ganhos : vazio.ganhos,
+    historico: Array.isArray(bruto.historico) ? bruto.historico : vazio.historico,
+    limites: bruto.limites && typeof bruto.limites === 'object' ? bruto.limites : vazio.limites,
+    poupanca: Array.isArray(bruto.poupanca) ? bruto.poupanca : vazio.poupanca,
+    streak: bruto.streak && typeof bruto.streak === 'object' ? bruto.streak : vazio.streak,
   };
 }
-
-/**
- * Normaliza o estado para garantir que todos os campos obrigatórios existam
- * e tenham o tipo correto. Útil após carregar dados potencialmente corrompidos.
- */
-function normalizarEstado() {
-  if (!estado) {
-    estado = estadoVazio();
-    return;
-  }
-
-  if (typeof estado.salario !== 'number' || state.salario < 0) {
-    estado.salario = 0;
-  }
-
-  if (!Array.isArray(estado.gastos)) {
-    estado.gastos = [];
-  }
-
-  if (!Array.isArray(estado.ganhos)) {
-    estado.ganhos = [];
-  }
-
-  if (!Array.isArray(estado.historico)) {
-    estado.historico = [];
-  }
-
-  if (!estado.limites || typeof estado.limites !== 'object') {
-    estado.limites = {};
-  }
-
-  if (!Array.isArray(estado.poupanca)) {
-    estado.poupanca = [];
-  }
-
-  if (!estado.streak || typeof estado.streak !== 'object') {
-    estado.streak = { dias: 0, melhorStreak: 0, ultimaData: null };
-  }
-}
-
-// ============================================================================
-// CORES POR CATEGORIA
-// Paleta alinhada à identidade visual: verde petróleo, âmbar e tons neutros elegantes
-// ============================================================================
-
-const CORES_CATEGORIA = {
-  Moradia: '#0f766e', // Verde petróleo (cor de marca)
-  Alimentação: '#059669', // Verde esmeralda
-  Transporte: '#0891b2', // Azul petróleo claro
-  Lazer: '#f59e0b', // Âmbar (accent)
-  Saúde: '#e11d48', // Rosa-vermelho (mesma família do "danger")
-  Estética: '#c026d3', // Magenta suave
-  Assinaturas: '#65a30d', // Verde oliva
-  Investimentos: '#115e59', // Verde petróleo escuro
-  Educação: '#7c6f95', // Roxo acinzentado, elegante e discreto
-  Outros: '#94a3b8', // Cinza neutro
-};
-
-const COR_PADRAO = '#cbd5e1';

@@ -1,46 +1,27 @@
-// ============================================================================
-// FUNÇÕES UTILITÁRIAS DE UI
-// Arquivo: js/ui/utils.js
-// Responsabilidade: Funções auxiliares de segurança e renderização de temas
-// ============================================================================
-
 /**
- * Escapa HTML para evitar XSS ao inserir texto do usuário via innerHTML.
- * Utiliza a estratégia de criar um elemento temporário e usar textContent.
- * @param {string} str - Texto a ser escapado
- * @returns {string} HTML escapado e seguro
+ * ui/utils.js — pequenos utilitários compartilhados que tocam o DOM, mas
+ * não pertencem a nenhum domínio específico (gastos, ganhos, poupança...).
+ *
+ * corTextoGrafico()/corGradeGrafico() moraram aqui de propósito, e não em
+ * tema.js: graficos.js precisa delas pra saber a cor certa ao desenhar, e
+ * tema.js precisa poder recriar os gráficos ao trocar de tema. Se essas
+ * duas funções estivessem em tema.js, graficos.js importaria de tema.js
+ * E tema.js importaria de graficos.js — uma dependência circular, que ES
+ * Modules não resolve de forma segura. Ficando num módulo neutro, os dois
+ * lados importam de utils.js sem nenhum dos dois depender do outro.
  */
-function escapeHTML(str) {
+
+/** Escapa HTML para evitar XSS ao inserir texto do usuário via innerHTML. */
+export function escapeHTML(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
 }
 
-/**
- * Retorna a cor de texto dos gráficos conforme o tema atual.
- * - Tema claro: preto/cinza escuro
- * - Tema escuro: branco/cinza claro
- * @returns {string} Cor em formato hex
- */
-function corTextoGrafico() {
+export function corTextoGrafico() {
   return document.body.classList.contains('dark-mode') ? '#f8fafc' : '#0f172a';
 }
 
-/**
- * Retorna a cor da grade dos gráficos conforme o tema atual.
- * - Tema claro: cinza bem claro
- * - Tema escuro: cinza escuro
- * @returns {string} Cor em formato hex
- */
-function corGradeGrafico() {
+export function corGradeGrafico() {
   return document.body.classList.contains('dark-mode') ? '#1e293b' : '#e2e8f0';
-}
-
-/**
- * Formata um número como moeda brasileira (R$).
- * @param {number} valor - Valor a formatar
- * @returns {string} String formatada como "R$ 1.234,56"
- */
-function formatarMoeda(valor) {
-  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }

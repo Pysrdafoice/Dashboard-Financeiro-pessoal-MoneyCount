@@ -1,110 +1,110 @@
-// ============================================================================
-// SELETORES DOM
-// Arquivo: js/ui/dom.js
-// Responsabilidade: Todos os seletores DOM (60+ elementos) com IDs validados
-// contra o HTML original
-// ============================================================================
+/**
+ * dom.js — único lugar do app que sabe os IDs/seletores do HTML.
+ *
+ * Toda referência a elemento da tela passa por aqui. Se um ID mudar no
+ * index.html, o ajuste é numa linha só deste arquivo — nenhum outro módulo
+ * precisa saber ou ser tocado.
+ *
+ * Importante: como esses `document.getElementById` rodam assim que este
+ * módulo é importado, o `<script type="module">` no HTML precisa estar
+ * depois do `<body>` (ou o app.js precisa esperar o DOM existir) — módulos
+ * já se comportam como `defer` por padrão, então isso funciona colocando
+ * a tag de script no fim do <body>, como já é o caso no index.html atual.
+ */
+export const DOM = {
+  // Formulário: Adicionar Gasto
+  formGasto: document.getElementById('form-gasto'),
+  descGasto: document.getElementById('desc-gasto'),
+  valorGasto: document.getElementById('valor-gasto'),
+  catGasto: document.getElementById('cat-gasto'),
+  tipoGasto: document.getElementById('tipo-gasto'),
+  parcelasGasto: document.getElementById('parcelas-gasto'),
 
-// ---- Formulário de Salário ----
-const inputSalario = document.getElementById('input-salario');
+  // Formulário: Adicionar Ganho
+  formGanho: document.getElementById('form-ganho'),
+  descGanho: document.getElementById('desc-ganho'),
+  valorGanho: document.getElementById('valor-ganho'),
+  catGanho: document.getElementById('cat-ganho'),
+  tipoGanho: document.getElementById('tipo-ganho'),
 
-// ---- Formulário de Gastos ----
-const formGasto = document.getElementById('form-gasto');
-const descGasto = document.getElementById('desc-gasto');
-const valorGasto = document.getElementById('valor-gasto');
-const catGasto = document.getElementById('cat-gasto');
-const tipoGasto = document.getElementById('tipo-gasto');
-const parcelasGasto = document.getElementById('parcelas-gasto');
+  // Configuração do Mês
+  inputSalario: document.getElementById('input-salario'),
 
-// ---- Formulário de Ganhos ----
-const formGanho = document.getElementById('form-ganho');
-const descGanho = document.getElementById('desc-ganho');
-const valorGanho = document.getElementById('valor-ganho');
-const catGanho = document.getElementById('cat-ganho');
-const tipoGanho = document.getElementById('tipo-ganho');
-const listaGanhos = document.getElementById('lista-ganhos');
+  // Resumo Financeiro
+  cardResumo: document.getElementById('card-resumo'),
+  resRenda: document.getElementById('res-renda'),
+  resGastos: document.getElementById('res-gastos'),
+  resSaldo: document.getElementById('res-saldo'),
+  resSaldoLivre: document.getElementById('res-saldo-livre'),
+  resumoItemLivre: document.getElementById('resumo-item-livre'),
+  resumoDivisorLivre: document.getElementById('resumo-divisor-livre'),
 
-// ---- Extrato de Transações ----
-const listaTransacoes = document.getElementById('lista-transacoes');
+  // Extratos
+  listaTransacoes: document.getElementById('lista-transacoes'),
+  listaGanhos: document.getElementById('lista-ganhos'),
 
-// ---- Banner Emocional (Streak) ----
-const streakBadge = document.getElementById('streak-badge');
-const streakNumero = document.getElementById('streak-numero');
-const fraseEmocional = document.getElementById('frase-emocional');
+  // Limites por Categoria
+  formLimite: document.getElementById('form-limite'),
+  catLimite: document.getElementById('cat-limite'),
+  valorLimite: document.getElementById('valor-limite'),
+  listaLimites: document.getElementById('lista-limites'),
 
-// ---- Formulário de Poupança ----
-const formPoupanca = document.getElementById('form-poupanca');
-const tipoPoupanca = document.getElementById('tipo-poupanca');
-const valorPoupanca = document.getElementById('valor-poupanca');
-const descPoupanca = document.getElementById('desc-poupanca');
-const poupancaSaldo = document.getElementById('poupanca-saldo');
-const listaPoupanca = document.getElementById('lista-poupanca');
+  // Poupança / Guardado
+  formPoupanca: document.getElementById('form-poupanca'),
+  tipoPoupanca: document.getElementById('tipo-poupanca'),
+  valorPoupanca: document.getElementById('valor-poupanca'),
+  descPoupanca: document.getElementById('desc-poupanca'),
+  poupancaSaldo: document.getElementById('poupanca-saldo'),
+  listaPoupanca: document.getElementById('lista-poupanca'),
 
-// ---- Card de Resumo (Renda, Gastos, Saldo) ----
-const resRenda = document.getElementById('res-renda');
-const resGastos = document.getElementById('res-gastos');
-const resSaldo = document.getElementById('res-saldo');
-const resSaldoLivre = document.getElementById('res-saldo-livre');
-const btnFecharMes = document.getElementById('btn-fechar-mes');
+  // Banner Emocional (frase + streak)
+  streakBadge: document.getElementById('streak-badge'),
+  streakNumero: document.getElementById('streak-numero'),
+  fraseEmocional: document.getElementById('frase-emocional'),
 
-// ---- Formulário de Limites por Categoria ----
-const formLimite = document.getElementById('form-limite');
-const catLimite = document.getElementById('cat-limite');
-const valorLimite = document.getElementById('valor-limite');
-const listaLimites = document.getElementById('lista-limites');
+  // Botão de Fechar Mês
+  btnFecharMes: document.getElementById('btn-fechar-mes'),
 
-// ---- Modal de Detalhamento por Categoria ----
-const modalOverlay = document.getElementById('modal-overlay');
-const modalTitulo = document.getElementById('modal-titulo');
-const modalTotal = document.getElementById('modal-total');
-const modalPercentual = document.getElementById('modal-percentual');
-const modalFechar = document.getElementById('modal-fechar');
-const modalListaItens = document.getElementById('modal-lista-itens');
-const modalLimiteWrap = document.getElementById('modal-limite-wrap');
-const modalLimiteTexto = document.getElementById('modal-limite-texto');
-const modalLimitePercentual = document.getElementById(
-  'modal-limite-percentual',
-);
-const modalLimiteBarra = document.getElementById('modal-limite-barra');
-const modalLimiteAviso = document.getElementById('modal-limite-aviso');
+  // Tema Claro/Escuro
+  btnTema: document.getElementById('btn-tema'),
 
-// ---- Funcionalidades de Exportar/Backup ----
-const btnExportarBackup = document.getElementById('btn-exportar-backup');
-const btnImportarBackup = document.getElementById('btn-importar-backup');
-const inputImportarBackup = document.getElementById('input-importar-backup');
-const btnExportarCsv = document.getElementById('btn-exportar-csv');
-const backupStatus = document.getElementById('backup-status');
+  // Menu Hambúrguer
+  btnMenu: document.getElementById('btn-menu'),
+  btnFecharMenu: document.getElementById('btn-fechar-menu'),
+  menuOverlay: document.getElementById('menu-overlay'),
 
-// ---- Tema Claro/Escuro ----
-const btnTema = document.getElementById('btn-tema');
+  // Exportar / Backup
+  btnExportarBackup: document.getElementById('btn-exportar-backup'),
+  btnImportarBackup: document.getElementById('btn-importar-backup'),
+  inputImportarBackup: document.getElementById('input-importar-backup'),
+  btnExportarCsv: document.getElementById('btn-exportar-csv'),
+  backupStatus: document.getElementById('backup-status'),
 
-// ---- Menu Hambúrguer (Gaveta Lateral) ----
-const btnMenu = document.getElementById('btn-menu');
-const btnFecharMenu = document.getElementById('btn-fechar-menu');
-const menuOverlay = document.getElementById('menu-overlay');
+  // Carrossel de Gráficos
+  carrosselSlides: document.querySelectorAll('.carrossel-slide'),
+  carrosselPrev: document.getElementById('carrossel-prev'),
+  carrosselNext: document.getElementById('carrossel-next'),
+  carrosselDots: document.getElementById('carrossel-dots'),
+  carrosselTitulo: document.getElementById('carrossel-titulo'),
+  carrosselVariacao: document.getElementById('carrossel-variacao'),
 
-// ---- Carrossel de Gráficos ----
-const carrosselPrev = document.getElementById('carrossel-prev');
-const carrosselNext = document.getElementById('carrossel-next');
-const carrosselDots = document.getElementById('carrossel-dots');
-const carrosselTitulo = document.getElementById('carrossel-titulo');
-const carrosselVariacao = document.getElementById('carrossel-variacao');
-const carrosselSlides = document.querySelectorAll('.carrossel-slide');
-const legendaPizza = document.getElementById('legenda-pizza');
+  // Canvas dos Gráficos (Chart.js)
+  canvasPizza: document.getElementById('pieChart'),
+  canvasLinha: document.getElementById('lineChart'),
+  canvasGuardado: document.getElementById('guardadoChart'),
+  canvasDetalhe: document.getElementById('detalheChart'),
+  legendaPizza: document.getElementById('legenda-pizza'),
 
-// ---- Canvas dos Gráficos (Chart.js) ----
-// Seletores acessados via document.getElementById() no código de renderização
-const canvasPieChart = () => document.getElementById('pieChart');
-const canvasLineChart = () => document.getElementById('lineChart');
-const canvasGuardadoChart = () => document.getElementById('guardadoChart');
-const canvasDetalheChart = () => document.getElementById('detalheChart');
-
-// ---- Elementos Dinâmicos (selecionados via querySelector) ----
-const getCardResumo = () => document.getElementById('card-resumo');
-const getResumoItemLivre = () => document.getElementById('resumo-item-livre');
-const getResumoDivisorLivre = () =>
-  document.getElementById('resumo-divisor-livre');
-const getCarrosselViewport = () =>
-  document.querySelector('.carrossel-viewport');
-const getHistoricoChartWrap = () =>
-  document.querySelector('#guardadoChart').closest('.historico-chart-wrap');
+  // Modal de Detalhamento por Categoria
+  modalOverlay: document.getElementById('modal-overlay'),
+  modalTitulo: document.getElementById('modal-titulo'),
+  modalTotal: document.getElementById('modal-total'),
+  modalPercentual: document.getElementById('modal-percentual'),
+  modalFechar: document.getElementById('modal-fechar'),
+  modalListaItens: document.getElementById('modal-lista-itens'),
+  modalLimiteWrap: document.getElementById('modal-limite-wrap'),
+  modalLimiteTexto: document.getElementById('modal-limite-texto'),
+  modalLimitePercentual: document.getElementById('modal-limite-percentual'),
+  modalLimiteBarra: document.getElementById('modal-limite-barra'),
+  modalLimiteAviso: document.getElementById('modal-limite-aviso'),
+};

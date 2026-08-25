@@ -1,0 +1,107 @@
+/**
+ * modules/poupanca.js — o "cofrinho" manual do FuelCount: registrar
+ * depósitos/retiradas, calcular o Saldo Livre p/ Gastar, e renderizar a
+ * lista de movimentos.
+ *
+ * Nota: renderizarPoupanca() chama renderizarGraficoGuardado() (de
+ * graficos.js, ainda não criado nesta etapa) porque o gráfico de Evolução
+ * do Guardado precisa se atualizar toda vez que um movimento é
+ * registrado/removido — mesma razão pela qual, no app original, essa
+ * chamada já vivia dentro da função de renderizar a poupança.
+ */
+import { estado } from '../estado.js';
+import { DOM } from '../ui/dom.js';
+import { escapeHTML } from '../ui/utils.js';
+import { formatarMoeda, calcularSaldoPoupanca, calcularTotais, calcularMovimentoPoupancaMesAtual } from '../calculos.js';
+import { salvarDados } from '../persistencia.js';
+import { renderizarGraficoGuardado } from './graficos.js';
+
+export function registrarMovimentoPoupanca() {
+  const tipo = DOM.tipoPoupanca.value; // 'deposito' | 'retirada'
+  const valor = parseFloat(DOM.valorPoupanca.value);
+  const descricao = DOM.descPoupanca.value.trim();
+
+  if (isNaN(valor) || valor <= 0) {
+    alert('Digite um valor válido, maior que zero.');
+    return;
+  }
+
+  // Evita que uma retirada deixe o saldo guardado negativo
+  if (tipo === 'retirada' && valor > calcularSaldoPoupanca(estado.poupanca)) {
+    alert('Você não pode retirar mais do que tem guardado.');
+    return;
+  }
+
+  estado.poupanca.push({
+    id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+    tipo: tipo,
+    valor: valor,
+    descricao: descricao || (tipo === 'deposito' ? 'Depósito' : 'Retirada'),
+    data: new Date().toISOString(),
+  });
+
+  salvarDados();
+  renderizarPoupanca();
+  DOM.formPoupanca.reset();
+}
+
+export function removerMovimentoPoupanca(id) {
+  estado.poupanca = estado.poupanca.filter((mov) => mov.id !== id);
+  salvarDados();
+  renderizarPoupanca();
+}
+
+/**
+ * Atualiza a 4ª coluna "Livre p/ Gastar" no card de Resumo (junto com seu
+ * divisor). Fica escondida quando não há movimento de poupança neste mês,
+ * pois nesse caso Saldo Livre === Saldo Restante e mostrar seria redundante.
+ */
+export function atualizarSaldoLivre() {
+  const { saldoRestante } = calcularTotais(estado);
+  const movimentoMes = calcularMovimentoPoupancaMesAtual(estado.poupanca);
+
+  if (movimentoMes === 0) {
+    DOM.resumoItemLivre.classList.add('hidden');
+    DOM.resumoDivisorLivre.classList.add('hidden');
+    return;
+  }
+
+  const saldoLivre = saldoRestante - movimentoMes;
+  DOM.resSaldoLivre.textContent = formatarMoeda(saldoLivre);
+  DOM.resSaldoLivre.className = saldoLivre >= 0 ? 'text-success' : 'text-danger';
+  DOM.resumoItemLivre.classList.remove('hidden');
+  DOM.resumoDivisorLivre.classList.remove('hidden');
+}
+
+export function renderizarPoupanca() {
+  DOM.poupancaSaldo.textContent = formatarMoeda(calcularSaldoPoupanca(estado.poupanca));
+  atualizarSaldoLivre();
+  renderizarGraficoGuardado();
+
+  DOM.listaPoupanca.innerHTML = '';
+
+  if (estado.poupanca.length === 0) {
+    DOM.listaPoupanca.innerHTML = `<li class="poupanca-vazio">Nenhum movimento registrado ainda.</li>`;
+    return;
+  }
+
+  // Mais recentes primeiro
+  [...estado.poupanca].reverse().forEach((mov) => {
+    const ehDeposito = mov.tipo === 'deposito';
+    const icone = ehDeposito ? '⬆️' : '⬇️';
+    const sinal = ehDeposito ? '+' : '−';
+
+    const li = document.createElement('li');
+    li.className = `poupanca-item ${mov.tipo}`;
+    li.innerHTML = `
+      <div class="poupanca-item-icone">${icone}</div>
+      <span class="poupanca-item-info">${escapeHTML(mov.descricao)}</span>
+      <span class="poupanca-item-valor">${sinal} ${formatarMoeda(mov.valor)}</span>
+      <button class="btn-remover-poupanca" title="Remover" aria-label="Remover movimento ${escapeHTML(mov.descricao)}">&times;</button>
+    `;
+    li.querySelector('.btn-remover-poupanca').addEventListener('click', () =>
+      removerMovimentoPoupanca(mov.id),
+    );
+    DOM.listaPoupanca.appendChild(li);
+  });
+}
