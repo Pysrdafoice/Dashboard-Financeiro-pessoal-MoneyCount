@@ -4,20 +4,23 @@
  * lista de movimentos.
  *
  * Nota: renderizarPoupanca() chama renderizarGraficoGuardado() (de
- * graficos.js, ainda não criado nesta etapa) porque o gráfico de Evolução
- * do Guardado precisa se atualizar toda vez que um movimento é
- * registrado/removido — mesma razão pela qual, no app original, essa
- * chamada já vivia dentro da função de renderizar a poupança.
+ * graficos.js) porque o gráfico de Evolução do Guardado precisa se
+ * atualizar toda vez que um movimento é registrado/removido.
  */
 import { estado } from '../estado.js';
 import { DOM } from '../ui/dom.js';
 import { escapeHTML } from '../ui/utils.js';
-import { formatarMoeda, calcularSaldoPoupanca, calcularTotais, calcularMovimentoPoupancaMesAtual } from '../calculos.js';
+import {
+  formatarMoeda,
+  calcularSaldoPoupanca,
+  calcularTotais,
+  calcularMovimentoPoupancaMesAtual,
+} from '../calculos.js';
 import { salvarDados } from '../persistencia.js';
 import { renderizarGraficoGuardado } from './graficos.js';
 
 export function registrarMovimentoPoupanca() {
-  const tipo = DOM.tipoPoupanca.value; // 'deposito' | 'retirada'
+  const tipo = DOM.tipoPoupanca.value;
   const valor = parseFloat(DOM.valorPoupanca.value);
   const descricao = DOM.descPoupanca.value.trim();
 
@@ -26,14 +29,15 @@ export function registrarMovimentoPoupanca() {
     return;
   }
 
-  // Evita que uma retirada deixe o saldo guardado negativo
   if (tipo === 'retirada' && valor > calcularSaldoPoupanca(estado.poupanca)) {
     alert('Você não pode retirar mais do que tem guardado.');
     return;
   }
 
   estado.poupanca.push({
-    id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+    id: crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random()}`,
     tipo: tipo,
     valor: valor,
     descricao: descricao || (tipo === 'deposito' ? 'Depósito' : 'Retirada'),
@@ -51,11 +55,6 @@ export function removerMovimentoPoupanca(id) {
   renderizarPoupanca();
 }
 
-/**
- * Atualiza a 4ª coluna "Livre p/ Gastar" no card de Resumo (junto com seu
- * divisor). Fica escondida quando não há movimento de poupança neste mês,
- * pois nesse caso Saldo Livre === Saldo Restante e mostrar seria redundante.
- */
 export function atualizarSaldoLivre() {
   const { saldoRestante } = calcularTotais(estado);
   const movimentoMes = calcularMovimentoPoupancaMesAtual(estado.poupanca);
@@ -68,24 +67,27 @@ export function atualizarSaldoLivre() {
 
   const saldoLivre = saldoRestante - movimentoMes;
   DOM.resSaldoLivre.textContent = formatarMoeda(saldoLivre);
-  DOM.resSaldoLivre.className = saldoLivre >= 0 ? 'text-success' : 'text-danger';
+  DOM.resSaldoLivre.className =
+    saldoLivre >= 0 ? 'text-success' : 'text-danger';
   DOM.resumoItemLivre.classList.remove('hidden');
   DOM.resumoDivisorLivre.classList.remove('hidden');
 }
 
 export function renderizarPoupanca() {
-  DOM.poupancaSaldo.textContent = formatarMoeda(calcularSaldoPoupanca(estado.poupanca));
+  DOM.poupancaSaldo.textContent = formatarMoeda(
+    calcularSaldoPoupanca(estado.poupanca),
+  );
   atualizarSaldoLivre();
   renderizarGraficoGuardado();
 
   DOM.listaPoupanca.innerHTML = '';
 
   if (estado.poupanca.length === 0) {
-    DOM.listaPoupanca.innerHTML = `<li class="poupanca-vazio">Nenhum movimento registrado ainda.</li>`;
+    DOM.listaPoupanca.innerHTML =
+      '<li class="poupanca-vazio">Nenhum movimento registrado ainda.</li>';
     return;
   }
 
-  // Mais recentes primeiro
   [...estado.poupanca].reverse().forEach((mov) => {
     const ehDeposito = mov.tipo === 'deposito';
     const icone = ehDeposito ? '⬆️' : '⬇️';

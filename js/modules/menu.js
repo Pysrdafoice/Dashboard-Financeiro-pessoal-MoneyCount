@@ -3,7 +3,7 @@
  * de recolher/expandir seções (⌄).
  */
 import { DOM } from '../ui/dom.js';
-import { obterSlideAtual } from './carrossel.js';
+import { obterSlideAtual } from './carrosel.js';
 import { redimensionarGraficoDoSlide } from './graficos.js';
 
 export function abrirMenu() {
