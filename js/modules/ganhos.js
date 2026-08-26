@@ -34,7 +34,9 @@ export function adicionarGanho() {
   }
 
   estado.ganhos.push({
-    id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+    id: crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random()}`,
     descricao: descricao,
     categoria: DOM.catGanho.value,
     valor: valor,
@@ -52,7 +54,7 @@ export function removerGanho(id) {
   salvarDados();
 }
 
-export function renderizarExtratoGanhos() {
+export function renderizarExtratoGanhos(atualizarInterface) {
   DOM.listaGanhos.innerHTML = '';
 
   if (estado.ganhos.length === 0) {
@@ -65,7 +67,10 @@ export function renderizarExtratoGanhos() {
   estado.ganhos.forEach((ganho) => {
     const card = document.createElement('article');
     const icone = pegarIconeCategoriaGanho(ganho.categoria);
-    const selo = ganho.tipo === 'fixo' ? ' <span class="selo-tipo selo-fixo">Fixo</span>' : '';
+    const selo =
+      ganho.tipo === 'fixo'
+        ? ' <span class="selo-tipo selo-fixo">Fixo</span>'
+        : '';
     card.className = 'transacao-card transacao-card--ganho';
     card.innerHTML = `
       <div class="transacao-card__icon" aria-hidden="true">${icone}</div>
@@ -79,9 +84,12 @@ export function renderizarExtratoGanhos() {
       </div>
     `;
 
-    card.querySelector('.btn-remover-transacao').addEventListener('click', () => {
-      removerGanho(ganho.id);
-    });
+    card
+      .querySelector('.btn-remover-transacao')
+      .addEventListener('click', () => {
+        removerGanho(ganho.id);
+        atualizarInterface();
+      });
 
     DOM.listaGanhos.appendChild(card);
   });

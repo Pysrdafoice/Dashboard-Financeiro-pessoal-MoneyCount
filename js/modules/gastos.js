@@ -17,7 +17,11 @@ import { escapeHTML } from '../ui/utils.js';
 import { formatarMoeda, registrarAtividadeStreak } from '../calculos.js';
 import { pegarIconeCategoria } from './categorias.js';
 import { salvarDados } from '../persistencia.js';
-import { fecharModal, abrirModalCategoria, obterCategoriaAtualModal } from './modal.js';
+import {
+  fecharModal,
+  abrirModalCategoria,
+  obterCategoriaAtualModal,
+} from './modal.js';
 
 /**
  * Valida os campos do formulário e adiciona um gasto ao estado.
@@ -43,7 +47,9 @@ export function adicionarGasto() {
   }
 
   const novoGasto = {
-    id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+    id: crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random()}`,
     descricao: descricao,
     categoria: DOM.catGasto.value,
     valor: valor,
@@ -81,7 +87,9 @@ export function removerGasto(id) {
 
   const categoriaAtualModal = obterCategoriaAtualModal();
   if (!DOM.modalOverlay.classList.contains('hidden') && categoriaAtualModal) {
-    const restantes = estado.gastos.filter((g) => g.categoria === categoriaAtualModal);
+    const restantes = estado.gastos.filter(
+      (g) => g.categoria === categoriaAtualModal,
+    );
     if (restantes.length === 0) {
       fecharModal();
     } else {
@@ -90,7 +98,7 @@ export function removerGasto(id) {
   }
 }
 
-export function renderizarExtrato() {
+export function renderizarExtrato(atualizarInterface) {
   DOM.listaTransacoes.innerHTML = '';
 
   if (estado.gastos.length === 0) {
@@ -117,9 +125,12 @@ export function renderizarExtrato() {
       </div>
     `;
 
-    card.querySelector('.btn-remover-transacao').addEventListener('click', () => {
-      removerGasto(gasto.id);
-    });
+    card
+      .querySelector('.btn-remover-transacao')
+      .addEventListener('click', () => {
+        removerGasto(gasto.id);
+        atualizarInterface();
+      });
 
     DOM.listaTransacoes.appendChild(card);
   });

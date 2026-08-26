@@ -67,8 +67,8 @@ function atualizarInterface() {
   DOM.resSaldo.className = saldoRestante >= 0 ? 'text-success' : 'text-danger';
   DOM.cardResumo.classList.toggle('card-alerta', saldoRestante < 0);
 
-  renderizarExtrato();
-  renderizarExtratoGanhos();
+  renderizarExtrato(atualizarInterface);
+  renderizarExtratoGanhos(atualizarInterface);
   renderizarGraficoPizza();
   renderizarGraficoLinha();
   renderizarGraficoGuardado();
