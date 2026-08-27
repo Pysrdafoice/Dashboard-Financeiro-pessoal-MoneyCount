@@ -8,48 +8,23 @@
  * atualizarInterface() sozinhos — isso é o que evita as dependências
  * circulares explicadas nos comentários de gastos.js/backup.js.
  */
-import { estado } from './js/estado.js';
-import { salvarDados, carregarDados } from './js/persistencia.js';
-import { DOM } from './js/ui/dom.js';
-import {
-  calcularTotais,
-  formatarMoeda,
-  filtrarGastosAposFechamento,
-  filtrarGanhosAposFechamento,
-} from './js/calculos.js';
+import { estado } from './estado.js';
+import { salvarDados, carregarDados } from './persistencia.js';
+import { DOM } from './ui/dom.js';
+import { calcularTotais, formatarMoeda, filtrarGastosAposFechamento, filtrarGanhosAposFechamento } from './calculos.js';
 
-import { adicionarGasto, renderizarExtrato } from './js/modules/gastos.js';
-import {
-  adicionarGanho,
-  renderizarExtratoGanhos,
-} from './js/modules/ganhos.js';
-import { definirLimite, renderizarListaLimites } from './js/modules/limites.js';
-import {
-  registrarMovimentoPoupanca,
-  renderizarPoupanca,
-} from './js/modules/poupanca.js';
-import {
-  renderizarBannerEmocional,
-  mostrarAlertaStreak,
-} from './js/modules/streak.js';
-import {
-  renderizarGraficoPizza,
-  renderizarGraficoLinha,
-  renderizarGraficoGuardado,
-} from './js/modules/graficos.js';
-import { fecharModal } from './js/modules/modal.js';
-import { inicializarCarrossel } from './js/modules/carrosel.js';
-import { aplicarTemaSalvo, alternarTema } from './js/modules/tema.js';
-import {
-  abrirMenu,
-  fecharMenu,
-  inicializarSecoesColapsaveis,
-} from './js/modules/menu.js';
-import {
-  exportarBackup,
-  importarBackup,
-  exportarCsv,
-} from './js/modules/backup.js';
+import { adicionarGasto, renderizarExtrato } from './modules/gastos.js';
+import { adicionarGanho, renderizarExtratoGanhos } from './modules/ganhos.js';
+import { definirLimite, renderizarListaLimites } from './modules/limites.js';
+import { registrarMovimentoPoupanca, renderizarPoupanca } from './modules/poupanca.js';
+import { renderizarBannerEmocional, mostrarAlertaStreak } from './modules/streak.js';
+import { renderizarGraficoPizza, renderizarGraficoLinha, renderizarGraficoGuardado } from './modules/graficos.js';
+import { fecharModal } from './modules/modal.js';
+import { inicializarCarrossel } from './modules/carrossel.js';
+import { aplicarTemaSalvo, alternarTema } from './modules/tema.js';
+import { abrirMenu, fecharMenu, inicializarSecoesColapsaveis } from './modules/menu.js';
+import { exportarBackup, importarBackup, exportarCsv } from './modules/backup.js';
+import { verificarPrimeiraVisita, inicializarOnboarding } from './modules/onboarding.js';
 
 /** Redesenha tudo que depende do estado atual. Chamada após qualquer ação que muda dados. */
 function atualizarInterface() {
@@ -67,8 +42,8 @@ function atualizarInterface() {
   DOM.resSaldo.className = saldoRestante >= 0 ? 'text-success' : 'text-danger';
   DOM.cardResumo.classList.toggle('card-alerta', saldoRestante < 0);
 
-  renderizarExtrato(atualizarInterface);
-  renderizarExtratoGanhos(atualizarInterface);
+  renderizarExtrato();
+  renderizarExtratoGanhos();
   renderizarGraficoPizza();
   renderizarGraficoLinha();
   renderizarGraficoGuardado();
@@ -97,9 +72,7 @@ function fecharMes() {
 
   salvarDados();
   atualizarInterface();
-  alert(
-    'Mês fechado! Gastos e ganhos fixos, além de parcelas ativas, já estão prontos para o novo mês.',
-  );
+  alert('Mês fechado! Gastos e ganhos fixos, além de parcelas ativas, já estão prontos para o novo mês.');
 }
 
 function registrarServiceWorker() {
@@ -115,7 +88,14 @@ document.addEventListener('DOMContentLoaded', () => {
   atualizarInterface();
   inicializarCarrossel();
   inicializarSecoesColapsaveis();
-  mostrarAlertaStreak();
+  inicializarOnboarding();
+
+  // Na primeira visita, o alerta "🔥 0 dias" apareceria antes mesmo da
+  // pessoa ver o Bem-vindo — soa estranho pra quem acabou de chegar.
+  const ehPrimeiraVisita = verificarPrimeiraVisita();
+  if (!ehPrimeiraVisita) {
+    mostrarAlertaStreak();
+  }
   registrarServiceWorker();
 
   DOM.btnTema.addEventListener('click', alternarTema);
@@ -148,10 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // nativo em parcelasGasto porque ele fica oculto quando o tipo não é
   // "parcelado", e o navegador não valida campo invisível.
   DOM.tipoGasto.addEventListener('change', () => {
-    DOM.parcelasGasto.classList.toggle(
-      'hidden',
-      DOM.tipoGasto.value !== 'parcelado',
-    );
+    DOM.parcelasGasto.classList.toggle('hidden', DOM.tipoGasto.value !== 'parcelado');
   });
 
   DOM.btnFecharMes.addEventListener('click', fecharMes);
@@ -173,9 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   DOM.btnExportarBackup.addEventListener('click', exportarBackup);
-  DOM.btnImportarBackup.addEventListener('click', () =>
-    DOM.inputImportarBackup.click(),
-  );
+  DOM.btnImportarBackup.addEventListener('click', () => DOM.inputImportarBackup.click());
   DOM.inputImportarBackup.addEventListener('change', async (e) => {
     if (await importarBackup(e)) atualizarInterface();
   });

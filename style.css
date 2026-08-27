@@ -947,6 +947,111 @@ body.dark-mode .backup-status.erro {
   display: none;
 }
 
+/* ---- Onboarding: Boas-vindas (primeira visita) ---- */
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 110; /* acima do modal de detalhamento, caso os dois existam ao mesmo tempo */
+}
+
+.onboarding-overlay.hidden {
+  display: none;
+}
+
+.onboarding-box {
+  background: linear-gradient(160deg, var(--card-bg), var(--card-bg) 70%, rgba(15, 118, 110, 0.08));
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 420px;
+  padding: 32px 28px;
+  text-align: center;
+  box-shadow:
+    0 20px 25px -5px rgba(15, 23, 42, 0.15),
+    0 8px 10px -6px rgba(15, 23, 42, 0.1);
+  animation: modalPop 0.2s ease-out;
+}
+
+.onboarding-emoji {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.onboarding-box h2 {
+  color: var(--primary);
+  font-size: 1.3rem;
+  margin-bottom: 12px;
+}
+
+.onboarding-box p {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  margin-bottom: 22px;
+}
+
+.onboarding-botoes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Botão "Já sei usar": intencionalmente discreto (sem fundo), pra não
+   competir visualmente com o convite principal ("Me mostra rapidinho") */
+.btn-texto {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 8px;
+  text-decoration: underline;
+}
+
+.btn-texto:hover {
+  color: var(--text-main);
+}
+
+/* ---- Tour guiado (um card por função) ---- */
+.tour-progresso {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: -12px;
+  margin-bottom: 18px;
+}
+
+.tour-botoes-linha {
+  flex-direction: row;
+  gap: 10px;
+}
+
+.tour-botoes-linha .btn-texto {
+  flex-shrink: 0;
+  text-decoration: none;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+}
+
+.tour-botoes-linha .btn-primary {
+  flex: 1;
+}
+
+.tour-botoes-linha .btn-texto.hidden {
+  display: none;
+}
+
+/* "Pular tour" fica separado dos botões de navegação, pra não ser
+   confundido com "Voltar" — ação diferente (sair do tour todo) */
+#btn-tour-pular {
+  margin-top: 12px;
+}
+
 /* ---- Modal de Detalhamento por Categoria ---- */
 .modal-overlay {
   position: fixed;

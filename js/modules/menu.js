@@ -3,7 +3,7 @@
  * de recolher/expandir seções (⌄).
  */
 import { DOM } from '../ui/dom.js';
-import { obterSlideAtual } from './carrosel.js';
+import { obterSlideAtual } from './carrossel.js';
 import { redimensionarGraficoDoSlide } from './graficos.js';
 
 export function abrirMenu() {
@@ -26,7 +26,9 @@ export function inicializarSecoesColapsaveis() {
       // tamanho do canvas visível (mesma lógica usada na troca de slides
       // em carrossel.js — daí compartilharem redimensionarGraficoDoSlide).
       if (!colapsado && secao.classList.contains('carrossel-card')) {
-        requestAnimationFrame(() => redimensionarGraficoDoSlide(obterSlideAtual()));
+        requestAnimationFrame(() =>
+          redimensionarGraficoDoSlide(obterSlideAtual()),
+        );
       }
     });
   });

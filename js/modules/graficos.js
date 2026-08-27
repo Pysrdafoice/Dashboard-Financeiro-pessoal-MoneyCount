@@ -8,7 +8,13 @@
 import { estado } from '../estado.js';
 import { DOM } from '../ui/dom.js';
 import { escapeHTML, corTextoGrafico, corGradeGrafico } from '../ui/utils.js';
-import { calcularTotais, calcularGuardadoAjustado, calcularVariacaoPercentual, parseMesChave, formatarMoeda } from '../calculos.js';
+import {
+  calcularTotais,
+  calcularGuardadoAjustado,
+  calcularVariacaoPercentual,
+  parseMesChave,
+  formatarMoeda,
+} from '../calculos.js';
 import { CORES_CATEGORIA, COR_PADRAO } from './categorias.js';
 import { abrirModalCategoria } from './modal.js';
 
@@ -28,7 +34,9 @@ export function renderizarGraficoPizza() {
   const data = Object.values(categorias);
   const { totalGastos } = calcularTotais(estado);
 
-  const cores = labels.length ? labels.map((l) => CORES_CATEGORIA[l] || COR_PADRAO) : ['#e2e8f0'];
+  const cores = labels.length
+    ? labels.map((l) => CORES_CATEGORIA[l] || COR_PADRAO)
+    : ['#e2e8f0'];
 
   const chartData = {
     labels: labels.length ? labels : ['Sem dados'],
@@ -65,10 +73,16 @@ export function renderizarGraficoPizza() {
       ctx.textBaseline = 'middle';
       ctx.fillStyle = corTextoGrafico();
       ctx.font = '700 16px Inter, sans-serif';
-      ctx.fillText(formatarMoeda(calcularTotais(estado).totalGastos), centroX, centroY - 5);
+      ctx.fillText(
+        formatarMoeda(calcularTotais(estado).totalGastos),
+        centroX,
+        centroY - 5,
+      );
 
       ctx.font = '400 11px Inter, sans-serif';
-      ctx.fillStyle = document.body.classList.contains('dark-mode') ? '#94a3b8' : '#64748b';
+      ctx.fillStyle = document.body.classList.contains('dark-mode')
+        ? '#94a3b8'
+        : '#64748b';
       ctx.fillText('gasto total', centroX, centroY + 14);
       ctx.restore();
     },
@@ -95,7 +109,9 @@ export function renderizarGraficoPizza() {
         }
       },
       onHover: (evt, elements) => {
-        evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+        evt.native.target.style.cursor = elements.length
+          ? 'pointer'
+          : 'default';
       },
     },
   });
@@ -112,7 +128,8 @@ function renderizarLegendaPizza(labels, cores, data, totalGastos) {
 
   labels.forEach((categoria, i) => {
     const valor = data[i];
-    const percentual = totalGastos > 0 ? ((valor / totalGastos) * 100).toFixed(0) : 0;
+    const percentual =
+      totalGastos > 0 ? ((valor / totalGastos) * 100).toFixed(0) : 0;
 
     const item = document.createElement('div');
     item.className = 'legenda-item';
@@ -132,7 +149,9 @@ export function renderizarGraficoLinha() {
   const labels = estado.historico.map((h) => h.mes);
   // h.rendaTotal é o campo novo (salário + ganhos extras); h.salario cobre
   // meses fechados antes dessa mudança, que só guardavam o salário puro.
-  const dadosRenda = estado.historico.map((h) => (h.rendaTotal !== undefined ? h.rendaTotal : h.salario));
+  const dadosRenda = estado.historico.map((h) =>
+    h.rendaTotal !== undefined ? h.rendaTotal : h.salario,
+  );
   const dadosGastos = estado.historico.map((h) => h.totalGastos);
 
   const chartData = {
@@ -146,7 +165,9 @@ export function renderizarGraficoLinha() {
       },
       {
         label: 'Gastos Totais',
-        data: labels.length ? dadosGastos : [calcularTotais(estado).totalGastos],
+        data: labels.length
+          ? dadosGastos
+          : [calcularTotais(estado).totalGastos],
         backgroundColor: '#e11d48',
         borderRadius: 4,
       },
@@ -169,7 +190,11 @@ export function renderizarGraficoLinha() {
       plugins: {
         legend: {
           position: 'bottom',
-          labels: { color: corTextoGrafico(), boxWidth: 12, font: { size: 11 } },
+          labels: {
+            color: corTextoGrafico(),
+            boxWidth: 12,
+            font: { size: 11 },
+          },
         },
       },
       scales: {
@@ -219,13 +244,14 @@ export function renderizarGraficoGuardado() {
   // usando os totais ao vivo — mesma lógica usada no card de Resumo
   const agora = new Date();
   const { totalGastos, rendaTotal } = calcularTotais(estado);
-  const { movimentoMes: brutoAtual, guardadoAjustado: ajustadoAtual } = calcularGuardadoAjustado(
-    estado.poupanca,
-    agora.getMonth(),
-    agora.getFullYear(),
-    rendaTotal,
-    totalGastos,
-  );
+  const { movimentoMes: brutoAtual, guardadoAjustado: ajustadoAtual } =
+    calcularGuardadoAjustado(
+      estado.poupanca,
+      agora.getMonth(),
+      agora.getFullYear(),
+      rendaTotal,
+      totalGastos,
+    );
   pontos.push({
     label: `${agora.getMonth() + 1}/${agora.getFullYear()} (atual)`,
     bruto: brutoAtual,
@@ -237,7 +263,8 @@ export function renderizarGraficoGuardado() {
   const dadosAjustados = pontos.map((p) => p.ajustado);
 
   const larguraMinima = Math.max(320, labels.length * 110);
-  DOM.canvasGuardado.closest('.historico-chart-wrap').style.minWidth = `${larguraMinima}px`;
+  DOM.canvasGuardado.closest('.historico-chart-wrap').style.minWidth =
+    `${larguraMinima}px`;
 
   const chartData = {
     labels,
@@ -278,7 +305,11 @@ export function renderizarGraficoGuardado() {
       plugins: {
         legend: {
           position: 'bottom',
-          labels: { color: corTextoGrafico(), boxWidth: 12, font: { size: 11 } },
+          labels: {
+            color: corTextoGrafico(),
+            boxWidth: 12,
+            font: { size: 11 },
+          },
         },
       },
       scales: {
@@ -307,7 +338,10 @@ export function atualizarBadgeVariacao(visivel) {
 
   const { totalGastos } = calcularTotais(estado);
   const mesAnterior = estado.historico[estado.historico.length - 1];
-  const variacao = calcularVariacaoPercentual(totalGastos, mesAnterior.totalGastos);
+  const variacao = calcularVariacaoPercentual(
+    totalGastos,
+    mesAnterior.totalGastos,
+  );
 
   if (variacao === null) {
     DOM.carrosselVariacao.classList.add('hidden');
@@ -316,8 +350,14 @@ export function atualizarBadgeVariacao(visivel) {
 
   const sinal = variacao > 0 ? '+' : '';
   DOM.carrosselVariacao.textContent = `${sinal}${variacao.toFixed(1)}% vs. mês anterior`;
-  DOM.carrosselVariacao.classList.remove('hidden', 'variacao-positiva', 'variacao-negativa');
-  DOM.carrosselVariacao.classList.add(variacao > 0 ? 'variacao-positiva' : 'variacao-negativa');
+  DOM.carrosselVariacao.classList.remove(
+    'hidden',
+    'variacao-positiva',
+    'variacao-negativa',
+  );
+  DOM.carrosselVariacao.classList.add(
+    variacao > 0 ? 'variacao-positiva' : 'variacao-negativa',
+  );
 }
 
 /**
@@ -330,7 +370,8 @@ export function atualizarBadgeVariacao(visivel) {
 export function redimensionarGraficoDoSlide(indiceSlide) {
   if (indiceSlide === 0 && pieChartInstance) pieChartInstance.resize();
   if (indiceSlide === 1 && lineChartInstance) lineChartInstance.resize();
-  if (indiceSlide === 2 && guardadoChartInstance) guardadoChartInstance.resize();
+  if (indiceSlide === 2 && guardadoChartInstance)
+    guardadoChartInstance.resize();
 }
 
 /** Usado por tema.js: destrói as 3 instâncias pra forçar recriação com as cores do novo tema. */

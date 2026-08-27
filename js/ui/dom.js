@@ -71,6 +71,22 @@ export const DOM = {
   // Menu Hambúrguer
   btnMenu: document.getElementById('btn-menu'),
   btnFecharMenu: document.getElementById('btn-fechar-menu'),
+  btnComoUsar: document.getElementById('btn-como-usar'),
+
+  // Onboarding: Boas-vindas
+  onboardingOverlay: document.getElementById('onboarding-overlay'),
+  btnOnboardingTour: document.getElementById('btn-onboarding-tour'),
+  btnOnboardingPular: document.getElementById('btn-onboarding-pular'),
+
+  // Onboarding: Tour guiado (um card por função)
+  tourOverlay: document.getElementById('tour-overlay'),
+  tourEmoji: document.getElementById('tour-emoji'),
+  tourTitulo: document.getElementById('tour-titulo'),
+  tourTexto: document.getElementById('tour-texto'),
+  tourProgresso: document.getElementById('tour-progresso'),
+  btnTourVoltar: document.getElementById('btn-tour-voltar'),
+  btnTourProximo: document.getElementById('btn-tour-proximo'),
+  btnTourPular: document.getElementById('btn-tour-pular'),
   menuOverlay: document.getElementById('menu-overlay'),
 
   // Exportar / Backup

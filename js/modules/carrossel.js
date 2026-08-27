@@ -5,9 +5,16 @@
  * dentro de irParaSlide() para o porquê.
  */
 import { DOM } from '../ui/dom.js';
-import { redimensionarGraficoDoSlide, atualizarBadgeVariacao } from './graficos.js';
+import {
+  redimensionarGraficoDoSlide,
+  atualizarBadgeVariacao,
+} from './graficos.js';
 
-const TITULOS_SLIDES = ['Distribuição por Categoria', 'Evolução Histórica', 'Evolução do Guardado'];
+const TITULOS_SLIDES = [
+  'Distribuição por Categoria',
+  'Evolução Histórica',
+  'Evolução do Guardado',
+];
 let slideAtual = 0;
 
 export function obterSlideAtual() {
@@ -23,8 +30,12 @@ export function inicializarCarrossel() {
     DOM.carrosselDots.appendChild(dot);
   });
 
-  DOM.carrosselPrev.addEventListener('click', () => irParaSlide(slideAtual - 1));
-  DOM.carrosselNext.addEventListener('click', () => irParaSlide(slideAtual + 1));
+  DOM.carrosselPrev.addEventListener('click', () =>
+    irParaSlide(slideAtual - 1),
+  );
+  DOM.carrosselNext.addEventListener('click', () =>
+    irParaSlide(slideAtual + 1),
+  );
 
   // Suporte a swipe (arrastar o dedo) no mobile
   let touchStartX = 0;
@@ -67,7 +78,9 @@ export function irParaSlide(indice) {
   // Histórica. Como Pizza e Histórico dividem o mesmo card (carrossel),
   // a seta é escondida somente enquanto o slide de Histórico está ativo,
   // e volta a aparecer normalmente no slide de Distribuição.
-  const btnColapsarCarrossel = document.querySelector('.carrossel-card .btn-colapsar');
+  const btnColapsarCarrossel = document.querySelector(
+    '.carrossel-card .btn-colapsar',
+  );
   if (btnColapsarCarrossel) {
     btnColapsarCarrossel.classList.toggle('hidden', ehSlideHistorico);
   }
