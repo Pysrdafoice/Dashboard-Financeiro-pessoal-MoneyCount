@@ -12,7 +12,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <!-- Chart.js para os gráficos -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!--
+      Chart.js fixado na versão 3.9.1 (última com suporte oficial a SRI no
+      jsDelivr — chartjs/Chart.js#11455). Antes de usar em produção, pegue
+      o hash real em https://www.jsdelivr.com/package/npm/chart.js?version=3.9.1
+      (clique em "Copy SRI" no arquivo dist/chart.min.js) e cole abaixo em
+      integrity="sha384-...". Não inventamos um hash aqui: um valor errado
+      faria o navegador simplesmente recusar carregar o Chart.js inteiro.
+    -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
     <header class="app-header">
