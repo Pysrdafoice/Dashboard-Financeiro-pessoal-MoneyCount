@@ -1,6 +1,6 @@
 :root {
-  --bg-app: #f4f6f9; /* Fundo geral levemente acinzentado */
-  --card-bg: #ffffff; /* Fundo dos blocos, limpo e destacado */
+  --bg-app: #e8ebf7; /* Fundo geral com mais contraste em relação aos cards */
+  --card-bg: #fbfbfe; /* Branco levemente "quente", não puro — reduz brilho/reflexo */
 
   --text-main: #0f172a; /* Preto ardósia escuro para títulos */
   --text-muted: #64748b; /* Cinza intermediário para legendas */
@@ -15,7 +15,7 @@
   --danger: #e11d48; /* Rosa-vermelho elegante para gastos/saldo negativo */
 
   --table-header-bg: #f1f5f9;
-  --input-bg: #ffffff;
+  --input-bg: #f7f8fc; /* Levemente distinto do card, sem ser branco puro */
   --radius: 12px;
 }
 
