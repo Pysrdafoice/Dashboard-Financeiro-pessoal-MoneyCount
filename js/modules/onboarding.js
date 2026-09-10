@@ -1,19 +1,7 @@
-/**
- * modules/onboarding.js — banner de boas-vindas pra quem abre o app pela
- * primeira vez, com um jeito de rever depois ("Como usar" no menu).
- *
- * A preferência "já vi isso" fica numa chave própria do localStorage
- * (fuelcount_onboarding_visto), separada do `estado` financeiro — assim
- * ela nunca entra num backup exportado (não faz sentido "restaurar" se
- * alguém já viu ou não uma tela de boas-vindas) e não precisa de
- * validação/normalização como os dados financeiros precisam.
- */
 import { DOM } from '../ui/dom.js';
 
 const CHAVE_LOCALSTORAGE_ONBOARDING = 'fuelcount_onboarding_visto';
 
-// Um card por função do app. Tom sempre de convite ("se quiser") — o tour
-// é só apresentação, ninguém precisa preencher nada pra passar pro próximo.
 const PASSOS_TOUR = [
   {
     emoji: '🧾',
@@ -30,12 +18,14 @@ const PASSOS_TOUR = [
   {
     emoji: '⚙️',
     titulo: 'Configuração do Mês',
-    texto: 'Seu salário-base fica aqui. Preenche quando quiser — o app lembra dele nos meses seguintes.',
+    texto:
+      'Seu salário-base fica aqui. Preenche quando quiser — o app lembra dele nos meses seguintes.',
   },
   {
     emoji: '📊',
     titulo: 'Resumo',
-    texto: 'Renda, Gastos, Saldo e quanto ainda está Livre pra gastar — tudo numa olhada só, sempre atualizado.',
+    texto:
+      'Renda, Gastos, Saldo e quanto ainda está Livre pra gastar — tudo numa olhada só, sempre atualizado.',
   },
   {
     emoji: '🐷',
@@ -52,7 +42,8 @@ const PASSOS_TOUR = [
   {
     emoji: '📋',
     titulo: 'Extrato',
-    texto: 'A lista completa dos seus gastos e ganhos do mês, sempre disponível pra revisar quando quiser.',
+    texto:
+      'A lista completa dos seus gastos e ganhos do mês, sempre disponível pra revisar quando quiser.',
   },
   {
     emoji: '📈',
@@ -63,7 +54,8 @@ const PASSOS_TOUR = [
   {
     emoji: '☰',
     titulo: 'Menu',
-    texto: 'No menu você exporta seus dados, faz backup, e pode reabrir este tour quando quiser — é só clicar em "Como usar".',
+    texto:
+      'No menu você exporta seus dados, faz backup, e pode reabrir este tour quando quiser — é só clicar em "Como usar".',
   },
 ];
 
@@ -94,7 +86,6 @@ function fecharBoasVindas() {
   marcarComoVisto();
 }
 
-/** Chamada uma vez, ao iniciar o app. @returns {boolean} true se era a primeira visita (banner mostrado). */
 export function verificarPrimeiraVisita() {
   if (!jaViuAntes()) {
     abrirBoasVindas();
@@ -102,8 +93,6 @@ export function verificarPrimeiraVisita() {
   }
   return false;
 }
-
-// ---- Tour guiado ----
 
 function renderizarPassoTour() {
   const passo = PASSOS_TOUR[passoAtual];
@@ -113,7 +102,8 @@ function renderizarPassoTour() {
   DOM.tourProgresso.textContent = `${passoAtual + 1} de ${PASSOS_TOUR.length}`;
 
   DOM.btnTourVoltar.classList.toggle('hidden', passoAtual === 0);
-  DOM.btnTourProximo.textContent = passoAtual === PASSOS_TOUR.length - 1 ? 'Concluir 🚀' : 'Próximo';
+  DOM.btnTourProximo.textContent =
+    passoAtual === PASSOS_TOUR.length - 1 ? 'Concluir 🚀' : 'Próximo';
 }
 
 function iniciarTour() {
@@ -153,8 +143,6 @@ export function inicializarOnboarding() {
   DOM.btnTourVoltar.addEventListener('click', voltarTour);
   DOM.btnTourPular.addEventListener('click', encerrarTour);
 
-  // Reabre a qualquer momento, mesmo pra quem já marcou como visto —
-  // é a "porta de volta" que evita a decisão "não mostrar mais" ser irreversível.
   DOM.btnComoUsar.addEventListener('click', () => {
     abrirBoasVindas();
   });

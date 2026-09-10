@@ -1,9 +1,3 @@
-/**
- * modules/carrossel.js — a navegação entre os 3 slides de gráficos
- * (setas, dots, swipe no mobile). A troca visual em si é feita com
- * display:none/block (não transform), de propósito — veja o comentário
- * dentro de irParaSlide() para o porquê.
- */
 import { DOM } from '../ui/dom.js';
 import {
   redimensionarGraficoDoSlide,
@@ -37,7 +31,6 @@ export function inicializarCarrossel() {
     irParaSlide(slideAtual + 1),
   );
 
-  // Suporte a swipe (arrastar o dedo) no mobile
   let touchStartX = 0;
   const viewport = document.querySelector('.carrossel-viewport');
   viewport.addEventListener(
@@ -62,7 +55,7 @@ export function inicializarCarrossel() {
 
 export function irParaSlide(indice) {
   const total = TITULOS_SLIDES.length;
-  slideAtual = (indice + total) % total; // navegação circular
+  slideAtual = (indice + total) % total;
 
   DOM.carrosselSlides.forEach((slide, i) => {
     slide.classList.toggle('ativo', i === slideAtual);
@@ -74,10 +67,6 @@ export function irParaSlide(indice) {
 
   const ehSlideHistorico = slideAtual === 1;
 
-  // Requisito: o botão de minimizar não deve existir para a Evolução
-  // Histórica. Como Pizza e Histórico dividem o mesmo card (carrossel),
-  // a seta é escondida somente enquanto o slide de Histórico está ativo,
-  // e volta a aparecer normalmente no slide de Distribuição.
   const btnColapsarCarrossel = document.querySelector(
     '.carrossel-card .btn-colapsar',
   );
@@ -87,8 +76,5 @@ export function irParaSlide(indice) {
 
   atualizarBadgeVariacao(ehSlideHistorico);
 
-  // Passo crucial: o Chart.js não mede canvas com display:none. Ao tornar
-  // o slide visível de novo, é preciso forçar o recálculo do tamanho —
-  // essa é a causa-raiz do bug de gráfico "quebrado" no carrossel antigo.
   requestAnimationFrame(() => redimensionarGraficoDoSlide(slideAtual));
 }

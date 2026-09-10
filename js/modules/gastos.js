@@ -1,16 +1,3 @@
-/**
- * modules/gastos.js — tudo que é específico do domínio "Gasto":
- * adicionar, remover, renderizar o extrato, e a regra de retenção usada
- * ao Fechar o Mês.
- *
- * Nota de arquitetura: adicionarGasto()/removerGasto() NÃO chamam
- * atualizarInterface() — só mutam o estado e retornam true/false. Quem
- * decide redesenhar a tela é o app.js. Se essas funções chamassem
- * atualizarInterface() diretamente, este arquivo precisaria importar de
- * app.js, e app.js precisa importar deste arquivo pra ligar os
- * formulários — uma dependência circular. Devolvendo um booleano, o
- * app.js decide o que fazer depois, sem esse problema.
- */
 import { estado } from '../estado.js';
 import { DOM } from '../ui/dom.js';
 import { escapeHTML } from '../ui/utils.js';
@@ -23,15 +10,10 @@ import {
   obterCategoriaAtualModal,
 } from './modal.js';
 
-/**
- * Valida os campos do formulário e adiciona um gasto ao estado.
- * @returns {boolean} true se adicionou com sucesso, false se a validação falhou
- *   (nesse caso, quem chamou não deve redesenhar a tela nem resetar o formulário).
- */
 export function adicionarGasto() {
   const valor = parseFloat(DOM.valorGasto.value);
   const descricao = DOM.descGasto.value.trim();
-  const tipo = DOM.tipoGasto.value; // 'pontual' | 'fixo' | 'parcelado'
+  const tipo = DOM.tipoGasto.value;
 
   if (!descricao) {
     alert('Digite uma descrição para o gasto.');
@@ -56,8 +38,6 @@ export function adicionarGasto() {
     tipo: tipo,
   };
 
-  // Gastos parcelados carregam quantas parcelas ainda restam (incluindo a atual).
-  // Esse contador é decrementado a cada "Fechar Mês" até chegar a zero.
   if (tipo === 'parcelado') {
     const parcelas = parseInt(DOM.parcelasGasto.value, 10);
     if (isNaN(parcelas) || parcelas < 2) {
@@ -76,11 +56,6 @@ export function adicionarGasto() {
   return true;
 }
 
-/**
- * Remove um gasto e, se o Modal de Detalhamento estiver aberto justamente
- * na categoria desse gasto, atualiza ou fecha o modal conforme sobrarem
- * ou não outros gastos na mesma categoria.
- */
 export function removerGasto(id) {
   estado.gastos = estado.gastos.filter((g) => g.id !== id);
   salvarDados();
@@ -136,8 +111,6 @@ export function renderizarExtrato(atualizarInterface) {
   });
 }
 
-// Selo visual ao lado da descrição: indica gastos Fixos ou Parcelados
-// (gastos Pontuais não recebem selo, pois são o comportamento padrão)
 function pegarSeloTipoGasto(gasto) {
   if (gasto.tipo === 'fixo') {
     return ' <span class="selo-tipo selo-fixo">Fixo</span>';

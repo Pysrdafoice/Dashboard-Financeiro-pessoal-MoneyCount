@@ -1,8 +1,3 @@
-/**
- * modules/limites.js — teto de gasto por categoria: definir, remover e
- * renderizar a lista com destaque visual quando o gasto se aproxima ou
- * ultrapassa o limite.
- */
 import { estado } from '../estado.js';
 import { DOM } from '../ui/dom.js';
 import { escapeHTML } from '../ui/utils.js';
@@ -34,7 +29,6 @@ export function removerLimite(categoria) {
   salvarDados();
   renderizarListaLimites();
 
-  // Atualiza o modal se estiver aberto na mesma categoria
   if (obterCategoriaAtualModal() === categoria) {
     abrirModalCategoria(categoria);
   }
@@ -56,7 +50,12 @@ export function renderizarListaLimites() {
       .reduce((acc, g) => acc + g.valor, 0);
     const percentual = Math.min((gastoAtual / limite) * 100, 999);
 
-    const percClasse = percentual >= 100 ? 'limite-estourou' : percentual >= 70 ? 'limite-atencao' : '';
+    const percClasse =
+      percentual >= 100
+        ? 'limite-estourou'
+        : percentual >= 70
+          ? 'limite-atencao'
+          : '';
 
     const li = document.createElement('li');
     li.className = `item-limite ${percClasse}`.trim();
@@ -65,7 +64,9 @@ export function renderizarListaLimites() {
             <span class="item-limite-valores">${formatarMoeda(gastoAtual)} / ${formatarMoeda(limite)}</span>
             <button class="btn-remover-limite" title="Remover limite" aria-label="Remover limite de ${escapeHTML(categoria)}">&times;</button>
         `;
-    li.querySelector('.btn-remover-limite').addEventListener('click', () => removerLimite(categoria));
+    li.querySelector('.btn-remover-limite').addEventListener('click', () =>
+      removerLimite(categoria),
+    );
     DOM.listaLimites.appendChild(li);
   });
 }

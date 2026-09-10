@@ -1,12 +1,3 @@
-/**
- * modules/poupanca.js — o "cofrinho" manual do FuelCount: registrar
- * depósitos/retiradas, calcular o Saldo Livre p/ Gastar, e renderizar a
- * lista de movimentos.
- *
- * Nota: renderizarPoupanca() chama renderizarGraficoGuardado() (de
- * graficos.js) porque o gráfico de Evolução do Guardado precisa se
- * atualizar toda vez que um movimento é registrado/removido.
- */
 import { estado } from '../estado.js';
 import { DOM } from '../ui/dom.js';
 import { escapeHTML } from '../ui/utils.js';

@@ -1,9 +1,3 @@
-/**
- * modules/ganhos.js — tudo que é específico do domínio "Ganho" (renda
- * extra: freelance, vendas, cashback etc). Espelha modules/gastos.js na
- * estrutura, mas é mais simples porque Ganhos não têm o conceito de
- * "parcelado" — só Pontual ou Fixo.
- */
 import { estado } from '../estado.js';
 import { DOM } from '../ui/dom.js';
 import { escapeHTML } from '../ui/utils.js';
@@ -11,14 +5,10 @@ import { formatarMoeda, registrarAtividadeStreak } from '../calculos.js';
 import { pegarIconeCategoriaGanho } from './categorias.js';
 import { salvarDados } from '../persistencia.js';
 
-/**
- * Valida os campos do formulário e adiciona um ganho ao estado.
- * @returns {boolean} true se adicionou com sucesso, false se a validação falhou.
- */
 export function adicionarGanho() {
   const valor = parseFloat(DOM.valorGanho.value);
   const descricao = DOM.descGanho.value.trim();
-  const tipo = DOM.tipoGanho.value; // 'pontual' | 'fixo'
+  const tipo = DOM.tipoGanho.value;
 
   if (!descricao) {
     alert('Digite uma descrição para o ganho.');

@@ -1,12 +1,9 @@
-/**
- * persistencia.js — salvar e carregar o estado do localStorage.
- *
- * Isolado num módulo próprio porque é o único lugar do app que sabe que a
- * "gaveta" de armazenamento é o localStorage. Se um dia isso mudar (ex:
- * IndexedDB, ou sync com um backend), só este arquivo muda — nenhum outro
- * módulo faz `localStorage.getItem` diretamente.
- */
-import { estado, substituirEstado, estadoVazio, normalizarEstado } from './estado.js';
+import {
+  estado,
+  substituirEstado,
+  estadoVazio,
+  normalizarEstado,
+} from './estado.js';
 
 const CHAVE_LOCALSTORAGE = 'orcamento_estado';
 

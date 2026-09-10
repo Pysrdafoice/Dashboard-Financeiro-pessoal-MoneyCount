@@ -1,14 +1,10 @@
-/**
- * modules/tema.js — alternar e persistir o tema claro/escuro.
- *
- * corTextoGrafico()/corGradeGrafico() NÃO moram aqui — ficam em
- * ui/utils.js, de propósito. Veja o comentário lá pra explicação
- * completa, mas em resumo: se estivessem aqui, graficos.js precisaria
- * importar de tema.js e tema.js precisaria importar de graficos.js pra
- * recriar os gráficos — uma dependência circular.
- */
 import { DOM } from '../ui/dom.js';
-import { destruirGraficosPrincipais, renderizarGraficoPizza, renderizarGraficoLinha, renderizarGraficoGuardado } from './graficos.js';
+import {
+  destruirGraficosPrincipais,
+  renderizarGraficoPizza,
+  renderizarGraficoLinha,
+  renderizarGraficoGuardado,
+} from './graficos.js';
 import { destruirGraficoModal, recriarGraficoModalSeAberto } from './modal.js';
 
 const CHAVE_LOCALSTORAGE_TEMA = 'fuelcount_tema';
@@ -24,7 +20,9 @@ export function aplicarTemaSalvo() {
 }
 
 export function alternarTema() {
-  const temaAtual = document.body.classList.contains('dark-mode') ? 'escuro' : 'claro';
+  const temaAtual = document.body.classList.contains('dark-mode')
+    ? 'escuro'
+    : 'claro';
   const novoTema = temaAtual === 'claro' ? 'escuro' : 'claro';
   definirTema(novoTema);
 
@@ -47,7 +45,6 @@ function definirTema(tema) {
   }
 }
 
-/** Destrói e recria todos os gráficos (principais + modal, se aberto) com as cores do novo tema. */
 function recriarGraficosComTemaAtual() {
   destruirGraficosPrincipais();
   destruirGraficoModal();
