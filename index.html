@@ -10,17 +10,18 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css" >
+    <link rel="stylesheet" href="style.css">
     <!-- Chart.js para os gráficos -->
     <!--
       Chart.js fixado na versão 3.9.1 (última com suporte oficial a SRI no
-      jsDelivr — chartjs/Chart.js#11455). Antes de usar em produção, pegue
-      o hash real em https://www.jsdelivr.com/package/npm/chart.js?version=3.9.1
-      (clique em "Copy SRI" no arquivo dist/chart.min.js) e cole abaixo em
-      integrity="sha384-...". Não inventamos um hash aqui: um valor errado
-      faria o navegador simplesmente recusar carregar o Chart.js inteiro.
+      jsDelivr — chartjs/Chart.js#11455), com hash de integridade real
+      obtido em jsdelivr.com/package/npm/chart.js?version=3.9.1. Se um dia
+      trocar de versão, o hash precisa ser atualizado junto — senão o
+      navegador recusa carregar o Chart.js inteiro.
     -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"
+        integrity="sha384-04CAqzeccDzIuOHLlvCLH6SPwtoVEX85Xqepx3s751ifMA8a3sC6+5l41l926715"
+        crossorigin="anonymous"></script>
 </head>
 <body>
     <header class="app-header">
@@ -43,6 +44,28 @@
             </div>
 
             <div class="menu-secao">
+                <h3>☁️ Conta &amp; Sincronização</h3>
+                <p class="chart-hint">Sincronização manual — nada é enviado à nuvem sem você clicar.</p>
+
+                <!-- Estado deslogado -->
+                <div id="nuvem-deslogado">
+                    <button id="btn-entrar-nuvem" class="btn-secondary">🔑 Entrar</button>
+                </div>
+
+                <!-- Estado logado (começa escondido; nuvem.js mostra quando detecta sessão ativa) -->
+                <div id="nuvem-logado" class="hidden">
+                    <p id="nuvem-email-usuario" class="chart-hint"></p>
+                    <div class="backup-botoes">
+                        <button id="btn-enviar-nuvem" class="btn-secondary">☁️⬆️ Enviar para a nuvem</button>
+                        <button id="btn-baixar-nuvem" class="btn-secondary">☁️⬇️ Baixar da nuvem</button>
+                        <button id="btn-sair-nuvem" class="btn-secondary">🚪 Sair da conta</button>
+                    </div>
+                </div>
+
+                <p id="nuvem-status" class="backup-status hidden"></p>
+            </div>
+
+            <div class="menu-secao">
                 <h3>💾 Exportar &amp; Backup</h3>
                 <p class="chart-hint">Salve uma cópia dos seus dados ou restaure um backup anterior.</p>
                 <div class="backup-botoes">
@@ -57,6 +80,7 @@
             <div class="menu-secao">
                 <h3>❓ Ajuda</h3>
                 <button id="btn-como-usar" class="btn-secondary">❓ Como usar o FuelCount</button>
+                <a href="privacidade.html" class="btn-secondary link-privacidade">🔒 Política de Privacidade</a>
             </div>
         </aside>
     </div>
