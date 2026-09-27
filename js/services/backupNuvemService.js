@@ -7,7 +7,7 @@
  * Isso evita exatamente o tipo de conflito que discutimos (duas edições
  * simultâneas em dispositivos diferentes brigando por prioridade).
  */
-import { supabase, supabaseConfigurado } from '../config/supabase.js';
+import { obterSupabase, supabaseConfigurado } from '../config/supabase.js';
 import { estado } from '../estado.js';
 import { substituirEstado, normalizarEstado } from '../estado.js';
 import { salvarDados } from '../persistencia.js';
@@ -15,6 +15,8 @@ import { salvarDados } from '../persistencia.js';
 /** Sobrescreve o backup na nuvem com o estado local atual. */
 export async function enviarParaNuvem(userId) {
   if (!supabaseConfigurado) throw new Error('Supabase não configurado.');
+
+  const supabase = await obterSupabase();
 
   const { error } = await supabase
     .from('backups_usuario')
@@ -30,6 +32,8 @@ export async function enviarParaNuvem(userId) {
  */
 export async function baixarDaNuvem(userId) {
   if (!supabaseConfigurado) throw new Error('Supabase não configurado.');
+
+  const supabase = await obterSupabase();
 
   const { data, error } = await supabase
     .from('backups_usuario')
