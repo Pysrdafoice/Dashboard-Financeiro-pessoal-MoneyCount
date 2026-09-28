@@ -32,8 +32,11 @@ export function normalizarEstado(bruto) {
     salario: typeof bruto.salario === 'number' ? bruto.salario : vazio.salario,
     gastos: Array.isArray(bruto.gastos) ? bruto.gastos : vazio.gastos,
     ganhos: Array.isArray(bruto.ganhos) ? bruto.ganhos : vazio.ganhos,
+    // O array vai inteiro, sem remontar cada entry: assim os campos
+    // `gastos`/`ganhos` guardados ao fechar o mês (ver fecharMes em app.js)
+    // sobrevivem ao carregar do localStorage e ao restaurar backup.
     historico: Array.isArray(bruto.historico)
-      ? bruto.historico
+      ? bruto.historico.filter((h) => h && typeof h === 'object')
       : vazio.historico,
     limites:
       bruto.limites && typeof bruto.limites === 'object'

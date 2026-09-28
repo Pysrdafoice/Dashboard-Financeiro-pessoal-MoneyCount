@@ -10,6 +10,7 @@ import {
 } from '../calculos.js';
 import { CORES_CATEGORIA, COR_PADRAO } from './categorias.js';
 import { abrirModalCategoria } from './modal.js';
+import { obterContextoVisivel } from './meses.js';
 
 let pieChartInstance = null;
 let lineChartInstance = null;
@@ -18,14 +19,16 @@ let guardadoChartInstance = null;
 export function renderizarGraficoPizza() {
   const ctx = DOM.canvasPizza.getContext('2d');
 
+  // A pizza acompanha o mês em visualização (atual ou fechado) — ver meses.js.
+  const contexto = obterContextoVisivel();
   const categorias = {};
-  estado.gastos.forEach((g) => {
+  contexto.gastos.forEach((g) => {
     categorias[g.categoria] = (categorias[g.categoria] || 0) + g.valor;
   });
 
   const labels = Object.keys(categorias);
   const data = Object.values(categorias);
-  const { totalGastos } = calcularTotais(estado);
+  const { totalGastos } = calcularTotais(contexto);
 
   const cores = labels.length
     ? labels.map((l) => CORES_CATEGORIA[l] || COR_PADRAO)
@@ -65,7 +68,7 @@ export function renderizarGraficoPizza() {
       ctx.fillStyle = corTextoGrafico();
       ctx.font = '700 16px Inter, sans-serif';
       ctx.fillText(
-        formatarMoeda(calcularTotais(estado).totalGastos),
+        formatarMoeda(calcularTotais(obterContextoVisivel()).totalGastos),
         centroX,
         centroY - 5,
       );

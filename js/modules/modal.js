@@ -1,5 +1,6 @@
 import { estado } from '../estado.js';
 import { DOM } from '../ui/dom.js';
+import { obterContextoVisivel } from './meses.js';
 import { escapeHTML, corTextoGrafico, corGradeGrafico } from '../ui/utils.js';
 import { calcularTotais, formatarMoeda } from '../calculos.js';
 import { CORES_CATEGORIA, COR_PADRAO } from './categorias.js';
@@ -14,12 +15,14 @@ export function obterCategoriaAtualModal() {
 export function abrirModalCategoria(categoria) {
   categoriaAtualModal = categoria;
 
-  const itensCategoria = estado.gastos
+  // O modal detalha o mês em visualização (mesma fonte da pizza que o abriu).
+  const contexto = obterContextoVisivel();
+  const itensCategoria = contexto.gastos
     .filter((g) => g.categoria === categoria)
     .sort((a, b) => b.valor - a.valor);
 
   const totalCategoria = itensCategoria.reduce((acc, g) => acc + g.valor, 0);
-  const { totalGastos } = calcularTotais(estado);
+  const { totalGastos } = calcularTotais(contexto);
   const percentual =
     totalGastos > 0 ? ((totalCategoria / totalGastos) * 100).toFixed(1) : '0.0';
 
@@ -137,8 +140,8 @@ export function destruirGraficoModal() {
 
 export function recriarGraficoModalSeAberto() {
   if (!DOM.modalOverlay.classList.contains('hidden') && categoriaAtualModal) {
-    const itensCategoria = estado.gastos
-      .filter((g) => g.categoria === categoriaAtualModal)
+    const itensCategoria = obterContextoVisivel()
+      .gastos.filter((g) => g.categoria === categoriaAtualModal)
       .sort((a, b) => b.valor - a.valor);
     renderizarGraficoDetalhe(itensCategoria, categoriaAtualModal);
   }

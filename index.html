@@ -192,7 +192,10 @@
       <!-- Adicionar Gasto: é a ação do dia a dia, por isso fica antes da configuração -->
       <section class="card colapsavel">
         <div class="card-cabecalho">
-          <h2>🧾 Adicionar Gasto</h2>
+          <h2>
+            <span class="led led--laranja" aria-hidden="true"></span>
+            🧾 Adicionar Gasto
+          </h2>
           <button
             class="btn-colapsar"
             aria-label="Minimizar Adicionar Gasto"
@@ -252,6 +255,13 @@
                 title="Quantidade total de parcelas"
               />
             </div>
+
+            <!-- Data opcional: vazio = hoje. Datas de um mês já fechado roteiam o gasto para aquele mês. -->
+            <div class="campo-data">
+              <label for="data-gasto">📅 Data (opcional)</label>
+              <input type="date" id="data-gasto" title="Data do gasto" />
+              <span class="chart-hint">Deixe em branco para usar hoje.</span>
+            </div>
           </form>
         </div>
       </section>
@@ -259,7 +269,10 @@
       <!-- Adicionar Ganho: ganhos extras, além do Salário Base -->
       <section class="card colapsavel">
         <div class="card-cabecalho">
-          <h2>💰 Adicionar Ganho</h2>
+          <h2>
+            <span class="led led--verde" aria-hidden="true"></span>
+            💰 Adicionar Ganho
+          </h2>
           <button
             class="btn-colapsar"
             aria-label="Minimizar Adicionar Ganho"
@@ -305,6 +318,12 @@
                 </option>
                 <option value="fixo">📌 Fixo (repete todo mês)</option>
               </select>
+            </div>
+
+            <div class="campo-data">
+              <label for="data-ganho">📅 Data (opcional)</label>
+              <input type="date" id="data-ganho" title="Data do ganho" />
+              <span class="chart-hint">Deixe em branco para usar hoje.</span>
             </div>
           </form>
         </div>
@@ -443,10 +462,23 @@
         </div>
       </section>
 
+      <!-- Navegar por mês: escolhe qual mês os extratos e a pizza mostram.
+           Fica escondido até existir pelo menos um mês fechado (meses.js). -->
+      <section id="card-navegar-mes" class="card hidden">
+        <div class="card-cabecalho">
+          <h2 id="titulo-navegar-mes">📅 Navegar por mês</h2>
+        </div>
+        <select id="seletor-mes" aria-labelledby="titulo-navegar-mes"></select>
+        <p id="aviso-mes-fechado" class="aviso-mes-fechado hidden"></p>
+      </section>
+
       <!-- Extrato de Ganhos -->
       <section class="card colapsavel">
         <div class="card-cabecalho">
-          <h2>💰 Ganhos do Mês</h2>
+          <h2>
+            💰 Ganhos do Mês
+            <span id="badge-mes-ganhos" class="badge-mes hidden"></span>
+          </h2>
           <button
             class="btn-colapsar"
             aria-label="Minimizar Ganhos do Mês"
@@ -463,7 +495,10 @@
       <!-- Extrato de Gastos -->
       <section class="card colapsavel">
         <div class="card-cabecalho">
-          <h2>🧾 Gastos do Mês</h2>
+          <h2>
+            🧾 Gastos do Mês
+            <span id="badge-mes-gastos" class="badge-mes hidden"></span>
+          </h2>
           <button
             class="btn-colapsar"
             aria-label="Minimizar Gastos do Mês"
@@ -482,6 +517,7 @@
         <div class="carrossel-header card-cabecalho">
           <div class="carrossel-titulo-wrap">
             <h2 id="carrossel-titulo">Distribuição por Categoria</h2>
+            <span id="badge-mes-graficos" class="badge-mes hidden"></span>
             <span
               id="carrossel-variacao"
               class="carrossel-variacao hidden"
