@@ -26,6 +26,11 @@ import { abrirMenu, fecharMenu, inicializarSecoesColapsaveis } from './modules/m
 import { exportarBackup, importarBackup, exportarCsv } from './modules/backup.js';
 import { verificarPrimeiraVisita, inicializarOnboarding } from './modules/onboarding.js';
 import { inicializarNuvem } from './modules/nuvem.js';
+import {
+  definirMesEmVisualizacao,
+  renderizarSeletorMes,
+  renderizarBadgesMes,
+} from './modules/meses.js';
 
 /** Redesenha tudo que depende do estado atual. Chamada após qualquer ação que muda dados. */
 function atualizarInterface() {
@@ -43,8 +48,14 @@ function atualizarInterface() {
   DOM.resSaldo.className = saldoRestante >= 0 ? 'text-success' : 'text-danger';
   DOM.cardResumo.classList.toggle('card-alerta', saldoRestante < 0);
 
-  renderizarExtrato();
-  renderizarExtratoGanhos();
+  // Seletor e badges primeiro: se o mês em visualização sumiu do historico
+  // (ex.: backup restaurado), meses.js volta para "Mês atual" antes de
+  // os extratos lerem o contexto.
+  renderizarSeletorMes();
+  renderizarBadgesMes();
+
+  renderizarExtrato(atualizarInterface);
+  renderizarExtratoGanhos(atualizarInterface);
   renderizarGraficoPizza();
   renderizarGraficoLinha();
   renderizarGraficoGuardado();
@@ -59,6 +70,8 @@ function fecharMes() {
   const dataAtual = new Date();
   const nomeMes = `${dataAtual.getMonth() + 1}/${dataAtual.getFullYear()}`;
 
+  // Além dos totais (lidos pelos gráficos de histórico), guardamos uma cópia
+  // dos itens do mês para que ele possa ser revisto e editado depois (meses.js).
   estado.historico = estado.historico.filter((h) => h.mes !== nomeMes);
   estado.historico.push({
     mes: nomeMes,
@@ -66,6 +79,8 @@ function fecharMes() {
     totalGanhosExtras,
     rendaTotal,
     totalGastos,
+    gastos: estado.gastos.map((g) => ({ ...g })),
+    ganhos: estado.ganhos.map((g) => ({ ...g })),
   });
 
   estado.gastos = filtrarGastosAposFechamento(estado.gastos);
@@ -151,6 +166,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   DOM.btnFecharMes.addEventListener('click', fecharMes);
+
+  DOM.seletorMes.addEventListener('change', (e) => {
+    definirMesEmVisualizacao(e.target.value);
+    atualizarInterface();
+  });
 
   DOM.formLimite.addEventListener('submit', (e) => {
     e.preventDefault();

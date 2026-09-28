@@ -9,7 +9,7 @@
 import { DOM } from '../ui/dom.js';
 import { supabaseConfigurado } from '../config/supabase.js';
 import { entrarComProvedor, sair, obterSessaoAtual, aoMudarAutenticacao } from '../services/authservice.js';
-import { enviarParaNuvem, baixarDaNuvem } from '../services/backupnuvemservice.js';
+import { enviarParaNuvem, baixarDaNuvem } from '../services/backupNuvemService.js';
 
 let timerStatusNuvem = null;
 

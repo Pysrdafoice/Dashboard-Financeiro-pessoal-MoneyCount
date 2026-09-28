@@ -43,9 +43,56 @@ export function formatarDataISO(data) {
   return `${ano}-${mes}-${dia}`;
 }
 
+/** "2026-08-05" -> "05/08/2026". Retorna '' se a data estiver ausente/inválida. */
+export function formatarDataBR(dataISO) {
+  if (typeof dataISO !== 'string') return '';
+  const [ano, mes, dia] = dataISO.split('-');
+  if (!ano || !mes || !dia) return '';
+  return `${dia}/${mes}/${ano}`;
+}
+
+/** Converte um "AAAA-MM-DD" para a chave de mês usada no historico ("M/AAAA"). */
+export function mesChaveDaData(dataISO) {
+  const [ano, mes] = dataISO.split('-').map(Number);
+  return `${mes}/${ano}`;
+}
+
+/** Último dia (em ISO) do mês "M/AAAA". Usado como data padrão de lançamentos retroativos. */
+export function ultimoDiaDoMes(mesChave) {
+  const { mesIndex, ano } = parseMesChave(mesChave);
+  return formatarDataISO(new Date(ano, mesIndex + 1, 0));
+}
+
+/** Comparação de strings ISO funciona porque o formato é AAAA-MM-DD (ordem lexicográfica = cronológica). */
+export function ehDataFutura(dataISO, dataReferencia = new Date()) {
+  return dataISO > formatarDataISO(dataReferencia);
+}
+
 export function parseMesChave(mesStr) {
   const [mes, ano] = mesStr.split('/').map(Number);
   return { mesIndex: mes - 1, ano, ordem: ano * 12 + mes };
+}
+
+/** Um entry do historico só é editável se guardou os itens individuais (meses fechados em versões antigas só têm os totais). */
+export function entryHistoricoEditavel(entry) {
+  return Boolean(entry) && Array.isArray(entry.gastos) && Array.isArray(entry.ganhos);
+}
+
+/**
+ * Recalcula os campos agregados de um mês fechado a partir dos itens guardados
+ * nele. Mantém os campos antigos (totalGastos, rendaTotal...) porque os
+ * gráficos de histórico e o Guardado Ajustado leem só eles.
+ */
+export function recalcularTotaisDoMes(entry) {
+  const { totalGastos, totalGanhosExtras, rendaTotal } = calcularTotais({
+    salario: entry.salario || 0,
+    gastos: entry.gastos,
+    ganhos: entry.ganhos,
+  });
+  entry.totalGastos = totalGastos;
+  entry.totalGanhosExtras = totalGanhosExtras;
+  entry.rendaTotal = rendaTotal;
+  return entry;
 }
 
 export function calcularGuardadoAjustado(

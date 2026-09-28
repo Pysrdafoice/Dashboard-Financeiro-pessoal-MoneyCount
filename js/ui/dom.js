@@ -5,12 +5,14 @@ export const DOM = {
   catGasto: document.getElementById('cat-gasto'),
   tipoGasto: document.getElementById('tipo-gasto'),
   parcelasGasto: document.getElementById('parcelas-gasto'),
+  dataGasto: document.getElementById('data-gasto'),
 
   formGanho: document.getElementById('form-ganho'),
   descGanho: document.getElementById('desc-ganho'),
   valorGanho: document.getElementById('valor-ganho'),
   catGanho: document.getElementById('cat-ganho'),
   tipoGanho: document.getElementById('tipo-ganho'),
+  dataGanho: document.getElementById('data-ganho'),
 
   inputSalario: document.getElementById('input-salario'),
 
@@ -24,6 +26,13 @@ export const DOM = {
 
   listaTransacoes: document.getElementById('lista-transacoes'),
   listaGanhos: document.getElementById('lista-ganhos'),
+
+  cardNavegarMes: document.getElementById('card-navegar-mes'),
+  seletorMes: document.getElementById('seletor-mes'),
+  avisoMesFechado: document.getElementById('aviso-mes-fechado'),
+  badgeMesGastos: document.getElementById('badge-mes-gastos'),
+  badgeMesGanhos: document.getElementById('badge-mes-ganhos'),
+  badgeMesGraficos: document.getElementById('badge-mes-graficos'),
 
   formLimite: document.getElementById('form-limite'),
   catLimite: document.getElementById('cat-limite'),
