@@ -16,10 +16,8 @@
 const SUPABASE_URL = 'https://lavgoyvlbbfbqidpzkgd.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_hpnWpchL3CGuwYBkbv-Jgw_dNq8RqVu';
 
-// ⚠️ LEMBRETE: ao trocar os valores acima pelos reais, atualize também o
-// vercel.json — a diretiva `connect-src` do CSP hoje só permite 'self', o
-// que bloquearia as chamadas. Adicione as duas origens, ex:
-// "connect-src 'self' https://SEUPROJETO.supabase.co https://cdn.jsdelivr.net"
+// ⚠️ LEMBRETE: se trocar a URL acima, atualize também o `connect-src` do
+// CSP em vercel.json (raiz do repo), senão o navegador bloqueia as chamadas.
 
 export const supabaseConfigurado =
   !SUPABASE_URL.startsWith('COLE_') && !SUPABASE_ANON_KEY.startsWith('COLE_');

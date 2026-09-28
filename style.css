@@ -1473,6 +1473,20 @@ body.dark-mode th {
   margin-top: 0;
 }
 
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.login-form input {
+  width: 100%;
+}
+
+.login-form .btn-primary {
+  width: 100%;
+}
+
 @media (max-width: 600px) {
   .menu-painel {
     padding: 16px 16px calc(20px + env(safe-area-inset-bottom, 0px));

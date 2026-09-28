@@ -8,10 +8,11 @@
  */
 import { DOM } from '../ui/dom.js';
 import { supabaseConfigurado } from '../config/supabase.js';
-import { entrarComProvedor, sair, obterSessaoAtual, aoMudarAutenticacao } from '../services/authservice.js';
+import { entrarComEmail, cadastrarComEmail, sair, obterSessaoAtual, aoMudarAutenticacao } from '../services/authservice.js';
 import { enviarParaNuvem, baixarDaNuvem } from '../services/backupNuvemService.js';
 
 let timerStatusNuvem = null;
+let timerStatusLogin = null;
 
 function mostrarStatusNuvem(mensagem, ehErro = false) {
   DOM.nuvemStatus.textContent = mensagem;
@@ -20,6 +21,58 @@ function mostrarStatusNuvem(mensagem, ehErro = false) {
 
   clearTimeout(timerStatusNuvem);
   timerStatusNuvem = setTimeout(() => DOM.nuvemStatus.classList.add('hidden'), 5000);
+}
+
+function mostrarStatusLogin(mensagem, ehErro = false) {
+  DOM.loginStatus.textContent = mensagem;
+  DOM.loginStatus.classList.remove('hidden', 'erro');
+  if (ehErro) DOM.loginStatus.classList.add('erro');
+
+  clearTimeout(timerStatusLogin);
+  timerStatusLogin = setTimeout(() => DOM.loginStatus.classList.add('hidden'), 8000);
+}
+
+function lerCredenciais() {
+  return { email: DOM.loginEmail.value.trim(), senha: DOM.loginSenha.value };
+}
+
+function bloquearFormLogin(bloquear) {
+  DOM.formLogin.querySelectorAll('input, button').forEach((el) => { el.disabled = bloquear; });
+}
+
+async function aoEntrar(evento) {
+  evento.preventDefault();
+  const { email, senha } = lerCredenciais();
+
+  bloquearFormLogin(true);
+  const resultado = await entrarComEmail(email, senha);
+  bloquearFormLogin(false);
+
+  if (!resultado.ok) {
+    mostrarStatusLogin(resultado.erro, true);
+    return;
+  }
+  DOM.loginSenha.value = '';
+  DOM.loginStatus.classList.add('hidden');
+}
+
+async function aoCadastrar() {
+  const { email, senha } = lerCredenciais();
+
+  bloquearFormLogin(true);
+  const resultado = await cadastrarComEmail(email, senha);
+  bloquearFormLogin(false);
+
+  if (!resultado.ok) {
+    mostrarStatusLogin(resultado.erro, true);
+    return;
+  }
+  DOM.loginSenha.value = '';
+  if (resultado.precisaConfirmarEmail) {
+    mostrarStatusLogin('Conta criada! Verifique seu e-mail para confirmar.');
+  } else {
+    mostrarStatusLogin('Conta criada com sucesso!');
+  }
 }
 
 function atualizarTelaDeConta(session) {
@@ -32,10 +85,8 @@ function atualizarTelaDeConta(session) {
 }
 
 export function inicializarNuvem() {
-  // TODO: troque 'google' pelo provedor que você ativar no painel do
-  // Supabase (Authentication → Providers). Dá pra ter mais de um botão
-  // aqui depois, um por provedor — a função aceita qualquer nome.
-  DOM.btnEntrarNuvem.addEventListener('click', () => entrarComProvedor('google'));
+  DOM.formLogin.addEventListener('submit', aoEntrar);
+  DOM.btnCadastrar.addEventListener('click', aoCadastrar);
 
   DOM.btnSairNuvem.addEventListener('click', async () => {
     await sair();
