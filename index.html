@@ -79,9 +79,30 @@
 
           <!-- Estado deslogado -->
           <div id="nuvem-deslogado">
-            <button id="btn-entrar-nuvem" class="btn-secondary">
-              🔑 Entrar
-            </button>
+            <form id="form-login" class="login-form" novalidate>
+              <input
+                type="email"
+                id="login-email"
+                placeholder="📧 E-mail"
+                autocomplete="email"
+                required
+              />
+              <input
+                type="password"
+                id="login-senha"
+                placeholder="🔒 Senha (mín. 6 caracteres)"
+                autocomplete="current-password"
+                required
+                minlength="6"
+              />
+              <div class="backup-botoes">
+                <button type="submit" class="btn-primary">🔑 Entrar</button>
+                <button type="button" id="btn-cadastrar" class="btn-secondary">
+                  ✨ Criar conta
+                </button>
+              </div>
+            </form>
+            <p id="login-status" class="backup-status hidden"></p>
           </div>
 
           <!-- Estado logado (começa escondido; nuvem.js mostra quando detecta sessão ativa) -->
