@@ -112,6 +112,19 @@ function inicializarComSeguranca(nome, fn) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  let erroPersistenciaIrrecuperavel = false;
+  window.addEventListener('fuelcount:persistencia-erro', (evento) => {
+    const { permanente, mensagem } = evento.detail;
+    erroPersistenciaIrrecuperavel ||= permanente;
+    DOM.persistenciaAviso.textContent = mensagem;
+    DOM.persistenciaAviso.classList.remove('hidden');
+  });
+  window.addEventListener('fuelcount:persistencia-ok', () => {
+    if (!erroPersistenciaIrrecuperavel) {
+      DOM.persistenciaAviso.classList.add('hidden');
+    }
+  });
+
   aplicarTemaSalvo();
   carregarDados();
   atualizarInterface();

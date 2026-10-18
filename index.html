@@ -14,19 +14,8 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
-    <!-- Chart.js para os gráficos -->
-    <!--
-      Chart.js fixado na versão 3.9.1 (última com suporte oficial a SRI no
-      jsDelivr — chartjs/Chart.js#11455), com hash de integridade real
-      obtido em jsdelivr.com/package/npm/chart.js?version=3.9.1. Se um dia
-      trocar de versão, o hash precisa ser atualizado junto — senão o
-      navegador recusa carregar o Chart.js inteiro.
-    -->
-    <script
-      src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"
-      integrity="sha384-9MhbyIRcBVQiiC7FSd7T38oJNj2Zh+EfxS7/vjhBi4OOT78NlHSnzM31EZRWR1LZ"
-      crossorigin="anonymous"
-    ></script>
+    <!-- Chart.js local para manter os gráficos disponíveis sem depender da CDN. -->
+    <script src="chart.min.js"></script>
   </head>
   <body>
     <header class="app-header">
@@ -83,6 +72,7 @@
               <input
                 type="email"
                 id="login-email"
+                aria-label="E-mail"
                 placeholder="📧 E-mail"
                 autocomplete="email"
                 required
@@ -90,6 +80,7 @@
               <input
                 type="password"
                 id="login-senha"
+                aria-label="Senha"
                 placeholder="🔒 Senha (mín. 6 caracteres)"
                 autocomplete="current-password"
                 required
@@ -101,8 +92,43 @@
                   ✨ Criar conta
                 </button>
               </div>
+              <button
+                type="button"
+                id="btn-recuperar-senha"
+                class="btn-texto"
+              >
+                Esqueci minha senha
+              </button>
             </form>
             <p id="login-status" class="backup-status hidden"></p>
+            <div id="recuperacao-senha" class="hidden">
+              <form id="form-nova-senha" class="login-form hidden">
+                <label for="nova-senha">Nova senha</label>
+                <input
+                  type="password"
+                  id="nova-senha"
+                  autocomplete="new-password"
+                  minlength="6"
+                  required
+                />
+                <label for="confirmar-nova-senha">Confirme a nova senha</label>
+                <input
+                  type="password"
+                  id="confirmar-nova-senha"
+                  autocomplete="new-password"
+                  minlength="6"
+                  required
+                />
+                <button type="submit" class="btn-primary">Atualizar senha</button>
+              </form>
+              <button
+                type="button"
+                id="btn-cancelar-recuperacao"
+                class="btn-texto"
+              >
+                Voltar ao login
+              </button>
+            </div>
           </div>
 
           <!-- Estado logado (começa escondido; nuvem.js mostra quando detecta sessão ativa) -->
@@ -157,6 +183,9 @@
           <a href="privacidade.html" class="btn-secondary link-privacidade"
             >🔒 Política de Privacidade</a
           >
+          <a href="termo_condicao.html" class="btn-secondary link-privacidade"
+            >📄 Termos de Uso</a
+          >
         </div>
       </aside>
     </div>
@@ -198,6 +227,12 @@
     </div>
 
     <main class="container">
+      <p
+        id="persistencia-aviso"
+        class="persistencia-aviso hidden"
+        role="alert"
+        aria-live="assertive"
+      ></p>
       <!-- Banner emocional: frase de progresso + streak de dias seguidos anotando gastos -->
       <section id="banner-emocional" class="banner-emocional">
         <div id="streak-badge" class="streak-badge hidden">
@@ -211,7 +246,7 @@
       </section>
 
       <!-- Adicionar Gasto: é a ação do dia a dia, por isso fica antes da configuração -->
-      <section class="card colapsavel">
+      <section id="card-gasto" class="card colapsavel">
         <div class="card-cabecalho">
           <h2>
             <span class="led led--laranja" aria-hidden="true"></span>
@@ -288,7 +323,7 @@
       </section>
 
       <!-- Adicionar Ganho: ganhos extras, além do Salário Base -->
-      <section class="card colapsavel">
+      <section id="card-ganho" class="card colapsavel">
         <div class="card-cabecalho">
           <h2>
             <span class="led led--verde" aria-hidden="true"></span>
@@ -351,7 +386,7 @@
       </section>
 
       <!-- Configuração do Mês: o próprio label do campo serve de título -->
-      <section class="card colapsavel">
+      <section id="card-renda-base" class="card colapsavel">
         <div class="card-cabecalho">
           <h2 id="titulo-salario">💵 Salário Bruto / Renda Base (R$):</h2>
           <button
@@ -375,7 +410,7 @@
       </section>
 
       <!-- Resumo Financeiro: título + as quatro informações alinhadas na mesma linha -->
-      <section class="card" id="card-resumo">
+      <section class="card resumo-principal" id="card-resumo">
         <div class="card-cabecalho">
           <h2>📊 Resumo</h2>
         </div>
@@ -391,7 +426,7 @@
           </div>
           <div class="resumo-divisor"></div>
           <div class="resumo-item">
-            <h3>⚖️ Saldo Restante</h3>
+            <h3>⚖️ Saldo disponível</h3>
             <p id="res-saldo" class="text-success">R$ 0,00</p>
           </div>
           <div class="resumo-divisor" id="resumo-divisor-livre"></div>
@@ -403,7 +438,7 @@
       </section>
 
       <!-- Poupança / Guardado: valor digitado manualmente pelo usuário -->
-      <section class="card colapsavel">
+      <section id="card-poupanca" class="card colapsavel">
         <div class="card-cabecalho">
           <h2>🐷 Guardado</h2>
           <button
@@ -444,7 +479,7 @@
       </section>
 
       <!-- Limites por Categoria -->
-      <section class="card colapsavel">
+      <section id="card-limites" class="card colapsavel">
         <div class="card-cabecalho">
           <h2>🎯 Limites por Categoria</h2>
           <button
@@ -494,7 +529,7 @@
       </section>
 
       <!-- Extrato de Ganhos -->
-      <section class="card colapsavel">
+      <section id="card-extrato-ganhos" class="card colapsavel">
         <div class="card-cabecalho">
           <h2>
             💰 Ganhos do Mês
@@ -514,7 +549,7 @@
       </section>
 
       <!-- Extrato de Gastos -->
-      <section class="card colapsavel">
+      <section id="card-extrato-gastos" class="card colapsavel">
         <div class="card-cabecalho">
           <h2>
             🧾 Gastos do Mês
@@ -534,7 +569,7 @@
       </section>
 
       <!-- Carrossel de Gráficos: Distribuição por Categoria + Evolução Histórica -->
-      <section class="card carrossel-card colapsavel">
+      <section id="card-graficos" class="card carrossel-card colapsavel">
         <div class="carrossel-header card-cabecalho">
           <div class="carrossel-titulo-wrap">
             <h2 id="carrossel-titulo">Distribuição por Categoria</h2>

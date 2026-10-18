@@ -19,6 +19,13 @@ Documentação do código JavaScript do aplicativo de orçamento financeiro. O d
 4. Cada módulo renderiza sua própria área; `calculos.js` concentra as regras sem acesso ao DOM.
 5. O fechamento do mês grava o histórico e retém apenas gastos e ganhos recorrentes.
 
+## Páginas legais, autenticação e instalação
+
+- `privacidade.html` e `termo_condicao.html` são as páginas legais, ligadas pelo menu e entre si.
+- A recuperação de senha usa o fluxo de e-mail do Supabase Auth. Configure a URL do site e permita a origem publicada na lista de redirecionamentos do Supabase.
+- `service-worker.js` é o ponto de entrada no escopo raiz; ele carrega `js/services/serviceworker.js` e mantém os recursos locais do app disponíveis offline após a primeira visita.
+- `manifest.json` e os SVGs em `icons/` fornecem os metadados e ícones da instalação PWA. Sirva o projeto por HTTPS ou por `localhost` para que o Service Worker possa ser registrado.
+
 ## Documentação original dos arquivos
 
 Os comentários abaixo foram retirados dos arquivos JavaScript e preservados aqui integralmente.

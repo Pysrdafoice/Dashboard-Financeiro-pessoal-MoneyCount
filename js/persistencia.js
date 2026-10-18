@@ -10,8 +10,20 @@ const CHAVE_LOCALSTORAGE = 'orcamento_estado';
 export function salvarDados() {
   try {
     localStorage.setItem(CHAVE_LOCALSTORAGE, JSON.stringify(estado));
+    window.dispatchEvent(new Event('fuelcount:persistencia-ok'));
+    return true;
   } catch (e) {
     console.error('Não foi possível salvar os dados no localStorage.', e);
+    window.dispatchEvent(
+      new CustomEvent('fuelcount:persistencia-erro', {
+        detail: {
+          permanente: false,
+          mensagem:
+            'Não foi possível salvar no navegador. As alterações ficam apenas nesta sessão; exporte um backup antes de sair.',
+        },
+      }),
+    );
+    return false;
   }
 }
 
@@ -24,5 +36,14 @@ export function carregarDados() {
   } catch (e) {
     console.error('Dados corrompidos no localStorage, iniciando do zero.', e);
     substituirEstado(estadoVazio());
+    window.dispatchEvent(
+      new CustomEvent('fuelcount:persistencia-erro', {
+        detail: {
+          permanente: true,
+          mensagem:
+            'Os dados locais não puderam ser lidos. O app iniciou vazio; restaure um backup antes de continuar.',
+        },
+      }),
+    );
   }
 }

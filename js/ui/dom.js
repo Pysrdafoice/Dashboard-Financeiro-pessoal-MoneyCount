@@ -49,6 +49,7 @@ export const DOM = {
   streakBadge: document.getElementById('streak-badge'),
   streakNumero: document.getElementById('streak-numero'),
   fraseEmocional: document.getElementById('frase-emocional'),
+  persistenciaAviso: document.getElementById('persistencia-aviso'),
 
   btnFecharMes: document.getElementById('btn-fechar-mes'),
 
@@ -89,7 +90,13 @@ export const DOM = {
   loginEmail: document.getElementById('login-email'),
   loginSenha: document.getElementById('login-senha'),
   btnCadastrar: document.getElementById('btn-cadastrar'),
+  btnRecuperarSenha: document.getElementById('btn-recuperar-senha'),
   loginStatus: document.getElementById('login-status'),
+  recuperacaoSenha: document.getElementById('recuperacao-senha'),
+  formNovaSenha: document.getElementById('form-nova-senha'),
+  novaSenha: document.getElementById('nova-senha'),
+  confirmarNovaSenha: document.getElementById('confirmar-nova-senha'),
+  btnCancelarRecuperacao: document.getElementById('btn-cancelar-recuperacao'),
 
   carrosselSlides: document.querySelectorAll('.carrossel-slide'),
   carrosselPrev: document.getElementById('carrossel-prev'),

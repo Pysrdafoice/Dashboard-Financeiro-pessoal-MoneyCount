@@ -4,16 +4,18 @@
 // IMPORTANTE: sempre que a lista de arquivos mudar, incremente
 // CACHE_VERSION. Sem isso, navegadores que já visitaram o site continuam
 // servindo a versão antiga do cache, e as mudanças não aparecem.
-const CACHE_VERSION = 'fuelcount-v2';
+const CACHE_VERSION = 'fuelcount-v3';
 
 const ARQUIVOS_DO_APP = [
   './',
   './index.html',
   './privacidade.html',
+  './termo_condicao.html',
   './style.css',
   './manifest.json',
   './icons/icon-192.svg',
   './icons/icon-512.svg',
+  './chart.min.js',
 
   './js/app.js',
   './js/estado.js',
@@ -22,7 +24,7 @@ const ARQUIVOS_DO_APP = [
   './js/ui/dom.js',
   './js/ui/utils.js',
   './js/config/supabase.js',
-  './js/services/authService.js',
+  './js/services/authservice.js',
   './js/services/backupNuvemService.js',
   './js/modules/categorias.js',
   './js/modules/gastos.js',

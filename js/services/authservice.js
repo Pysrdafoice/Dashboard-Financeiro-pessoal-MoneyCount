@@ -36,6 +36,12 @@ function validarCredenciais(email, senha) {
   return null;
 }
 
+function validarEmail(email) {
+  if (!supabaseConfigurado) return 'A sincronização com a nuvem ainda não foi configurada neste app.';
+  if (!email || !email.trim()) return 'Informe seu e-mail.';
+  return null;
+}
+
 function traduzirErroAuth(erro) {
   const msg = String(erro?.message || '').toLowerCase();
   if (msg.includes('invalid login credentials')) return 'E-mail ou senha incorretos.';
@@ -87,13 +93,52 @@ export async function cadastrarComEmail(email, senha) {
   }
 }
 
-export async function sair() {
-  if (!supabaseConfigurado) return;
+export async function solicitarRecuperacaoSenha(email) {
+  const invalido = validarEmail(email);
+  if (invalido) return { ok: false, erro: invalido };
+
   try {
     const supabase = await obterSupabase();
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: new URL('./', window.location.href).toString(),
+    });
+    if (error) throw error;
+    return { ok: true };
+  } catch (erro) {
+    console.error('Erro ao solicitar recuperação de senha:', erro);
+    return { ok: false, erro: traduzirErroAuth(erro) };
+  }
+}
+
+export async function atualizarSenha(senha) {
+  if (!supabaseConfigurado) {
+    return { ok: false, erro: 'A sincronização com a nuvem ainda não foi configurada neste app.' };
+  }
+  if (!senha || senha.length < SENHA_MINIMA) {
+    return { ok: false, erro: `A senha precisa ter pelo menos ${SENHA_MINIMA} caracteres.` };
+  }
+
+  try {
+    const supabase = await obterSupabase();
+    const { error } = await supabase.auth.updateUser({ password: senha });
+    if (error) throw error;
+    return { ok: true };
+  } catch (erro) {
+    console.error('Erro ao atualizar senha:', erro);
+    return { ok: false, erro: traduzirErroAuth(erro) };
+  }
+}
+
+export async function sair() {
+  if (!supabaseConfigurado) return false;
+  try {
+    const supabase = await obterSupabase();
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    return true;
   } catch (erro) {
     console.error('Erro ao sair:', erro);
+    return false;
   }
 }
 
@@ -114,7 +159,7 @@ export async function aoMudarAutenticacao(callback) {
   if (!supabaseConfigurado) return;
   try {
     const supabase = await obterSupabase();
-    supabase.auth.onAuthStateChange((_evento, session) => callback(session));
+    supabase.auth.onAuthStateChange((evento, session) => callback(session, evento));
   } catch (erro) {
     console.error('Erro ao observar autenticação:', erro);
   }

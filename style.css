@@ -17,6 +17,16 @@
   --table-header-bg: #f1f5f9;
   --input-bg: #f7f8fc; /* Levemente distinto do card, sem ser branco puro */
   --radius: 12px;
+  --radius-lg: 18px;
+  --font-ui: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --content-width: 1200px;
+  --shadow-card: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
 }
 
 body.dark-mode {
@@ -55,7 +65,7 @@ body {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -133,11 +143,11 @@ img, canvas {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: var(--content-width);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--space-6);
 }
 
 /* ---- Banner Emocional (frase de progresso + streak) ---- */
@@ -177,9 +187,7 @@ img, canvas {
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
   padding: 20px;
-  box-shadow:
-    0 4px 6px -1px rgba(15, 23, 42, 0.05),
-    0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  box-shadow: var(--shadow-card);
 }
 
 input,
@@ -217,6 +225,7 @@ select:focus {
   border-radius: var(--radius);
   cursor: pointer;
   font-weight: 600;
+  min-height: 44px;
   box-shadow: 0 2px 4px -1px rgba(15, 118, 110, 0.25);
   transition:
     background 0.2s,
@@ -236,6 +245,7 @@ select:focus {
   border-radius: var(--radius);
   cursor: pointer;
   font-weight: 600;
+  min-height: 44px;
   transition: background 0.2s;
 }
 
@@ -993,6 +1003,259 @@ body.dark-mode .led--verde {
 .btn-remover-limite:hover {
   background-color: var(--border-color);
   color: var(--danger);
+}
+
+/* ---- Finanças e páginas legais ---- */
+.container > section {
+  order: 2;
+}
+
+#banner-emocional {
+  order: 0;
+}
+
+#card-resumo {
+  order: 1;
+}
+
+#card-poupanca {
+  order: 3;
+}
+
+#card-gasto {
+  order: 4;
+}
+
+#card-ganho {
+  order: 5;
+}
+
+#card-renda-base {
+  order: 6;
+}
+
+#card-limites {
+  order: 7;
+}
+
+#card-extrato-ganhos {
+  order: 8;
+}
+
+#card-extrato-gastos {
+  order: 9;
+}
+
+#card-graficos {
+  order: 10;
+}
+
+#card-navegar-mes {
+  order: 11;
+}
+
+.resumo-principal {
+  border-color: color-mix(in srgb, var(--primary) 28%, var(--border-color));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--primary) 7%, var(--card-bg)), var(--card-bg) 65%);
+}
+
+.resumo-principal .card-cabecalho h2 {
+  font-size: 1.15rem;
+}
+
+.resumo-principal .resumo-card {
+  gap: 12px;
+}
+
+.resumo-principal .resumo-item {
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+}
+
+.resumo-principal .resumo-item:last-child {
+  border-color: color-mix(in srgb, var(--success) 38%, var(--border-color));
+}
+
+.resumo-principal .resumo-divisor {
+  display: none;
+}
+
+.resumo-principal .resumo-item p {
+  font-variant-numeric: tabular-nums;
+}
+
+.legal-page {
+  min-height: 100vh;
+  padding: clamp(16px, 4vw, 40px);
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(15, 118, 110, 0.12), transparent 45%),
+    var(--bg-app);
+}
+
+.legal-container {
+  width: min(100%, 860px);
+  margin: 0 auto;
+}
+
+.legal-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-bottom: 16px;
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.legal-back:hover,
+.legal-card a:hover {
+  text-decoration: underline;
+}
+
+.legal-card {
+  padding: clamp(22px, 5vw, 48px);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  background: var(--card-bg);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+
+.legal-card h1 {
+  margin-bottom: 8px;
+  color: var(--primary);
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.legal-card h2 {
+  margin: 30px 0 10px;
+  font-size: 1.15rem;
+}
+
+.legal-card p,
+.legal-card li {
+  color: var(--text-muted);
+  line-height: 1.75;
+}
+
+.legal-card p + p,
+.legal-card ul,
+.legal-card ol {
+  margin-top: 12px;
+}
+
+.legal-card ul,
+.legal-card ol {
+  padding-left: 24px;
+}
+
+.legal-card a {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.legal-eyebrow {
+  color: var(--primary) !important;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.legal-updated {
+  margin-bottom: 28px;
+  font-size: 0.86rem;
+}
+
+.persistencia-aviso {
+  padding: 12px 16px;
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--border-color));
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--danger) 8%, var(--card-bg));
+  color: var(--danger);
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .btn-tema,
+  .btn-hamburguer {
+    width: 44px;
+    height: 44px;
+  }
+
+  .btn-colapsar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .btn-remover-poupanca,
+  .btn-remover-limite,
+  .btn-remover-transacao,
+  .btn-fechar-modal {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .resumo-principal .resumo-card {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .resumo-principal .resumo-item {
+    padding: 12px 8px;
+  }
+
+  .resumo-principal .resumo-item p {
+    font-size: clamp(0.85rem, 4vw, 1.1rem);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .resumo-principal #resumo-item-livre {
+    grid-column: 1 / -1;
+  }
+
+  .legal-card {
+    border-radius: 14px;
+  }
+
+  .carrossel-dot {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    background:
+      radial-gradient(circle, var(--border-color) 0 4px, transparent 4.5px);
+  }
+
+  .carrossel-dot.ativo {
+    width: 44px;
+    border-radius: 999px;
+    background:
+      radial-gradient(circle, var(--primary) 0 5px, transparent 5.5px);
+  }
+}
+
+@media (max-width: 768px) {
+  .resumo-principal .resumo-item p {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ---- Barra de progresso de limite dentro do Modal ---- */
