@@ -44,7 +44,13 @@ export async function baixarDaNuvem(userId) {
   if (error) throw error;
   if (!data) return false;
 
+  const estadoAnterior = JSON.parse(JSON.stringify(estado));
   substituirEstado(normalizarEstado(data.dados));
-  salvarDados();
+  if (!salvarDados()) {
+    substituirEstado(estadoAnterior);
+    throw new Error(
+      'Os dados da nuvem não puderam ser salvos neste navegador; os dados locais anteriores foram mantidos.',
+    );
+  }
   return true;
 }

@@ -4,6 +4,7 @@ import { escapeHTML } from '../ui/utils.js';
 import { formatarMoeda } from '../calculos.js';
 import { salvarDados } from '../persistencia.js';
 import { abrirModalCategoria, obterCategoriaAtualModal } from './modal.js';
+import { obterContextoVisivel } from './meses.js';
 
 export function definirLimite() {
   const categoria = DOM.catLimite.value;
@@ -11,27 +12,42 @@ export function definirLimite() {
 
   if (!categoria) {
     alert('Selecione uma categoria.');
-    return;
+    return false;
   }
   if (isNaN(valor) || valor <= 0) {
     alert('Digite um limite válido, maior que zero.');
-    return;
+    return false;
   }
 
+  const tinhaLimite = Object.prototype.hasOwnProperty.call(
+    estado.limites,
+    categoria,
+  );
+  const limiteAnterior = estado.limites[categoria];
   estado.limites[categoria] = valor;
-  salvarDados();
+  if (!salvarDados()) {
+    if (tinhaLimite) estado.limites[categoria] = limiteAnterior;
+    else delete estado.limites[categoria];
+    return false;
+  }
   renderizarListaLimites();
   DOM.formLimite.reset();
+  return true;
 }
 
 export function removerLimite(categoria) {
+  const limiteAnterior = estado.limites[categoria];
   delete estado.limites[categoria];
-  salvarDados();
+  if (!salvarDados()) {
+    estado.limites[categoria] = limiteAnterior;
+    return false;
+  }
   renderizarListaLimites();
 
   if (obterCategoriaAtualModal() === categoria) {
     abrirModalCategoria(categoria);
   }
+  return true;
 }
 
 export function renderizarListaLimites() {
@@ -45,7 +61,7 @@ export function renderizarListaLimites() {
 
   categorias.forEach((categoria) => {
     const limite = estado.limites[categoria];
-    const gastoAtual = estado.gastos
+    const gastoAtual = obterContextoVisivel().gastos
       .filter((g) => g.categoria === categoria)
       .reduce((acc, g) => acc + g.valor, 0);
     const percentual = Math.min((gastoAtual / limite) * 100, 999);

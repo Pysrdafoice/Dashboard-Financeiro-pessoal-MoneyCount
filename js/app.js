@@ -11,7 +11,7 @@
 import { estado } from './estado.js';
 import { salvarDados, carregarDados } from './persistencia.js';
 import { DOM } from './ui/dom.js';
-import { calcularTotais, formatarMoeda, filtrarGastosAposFechamento, filtrarGanhosAposFechamento } from './calculos.js';
+import { calcularTotais, formatarMoeda, fecharMesEstado } from './calculos.js';
 
 import { adicionarGasto, renderizarExtrato } from './modules/gastos.js';
 import { adicionarGanho, renderizarExtratoGanhos } from './modules/ganhos.js';
@@ -54,8 +54,8 @@ function atualizarInterface() {
   renderizarSeletorMes();
   renderizarBadgesMes();
 
-  renderizarExtrato(atualizarInterface);
-  renderizarExtratoGanhos(atualizarInterface);
+  renderizarExtrato();
+  renderizarExtratoGanhos();
   renderizarGraficoPizza();
   renderizarGraficoLinha();
   renderizarGraficoGuardado();
@@ -66,29 +66,25 @@ function atualizarInterface() {
 
 /** Fecha o mês: salva o histórico e aplica a retenção de Fixos/Parcelados (regras puras em calculos.js). */
 function fecharMes() {
-  const { totalGastos, totalGanhosExtras, rendaTotal } = calcularTotais(estado);
   const dataAtual = new Date();
   const nomeMes = `${dataAtual.getMonth() + 1}/${dataAtual.getFullYear()}`;
+  const historicoAnterior = estado.historico.slice();
+  const gastosAnteriores = estado.gastos;
+  const ganhosAnteriores = estado.ganhos;
 
-  // Além dos totais (lidos pelos gráficos de histórico), guardamos uma cópia
-  // dos itens do mês para que ele possa ser revisto e editado depois (meses.js).
-  estado.historico = estado.historico.filter((h) => h.mes !== nomeMes);
-  estado.historico.push({
-    mes: nomeMes,
-    salario: estado.salario,
-    totalGanhosExtras,
-    rendaTotal,
-    totalGastos,
-    gastos: estado.gastos.map((g) => ({ ...g })),
-    ganhos: estado.ganhos.map((g) => ({ ...g })),
-  });
-
-  estado.gastos = filtrarGastosAposFechamento(estado.gastos);
-  estado.ganhos = filtrarGanhosAposFechamento(estado.ganhos);
-
-  salvarDados();
+  if (!fecharMesEstado(estado, nomeMes)) {
+    alert('Este mês já foi fechado.');
+    return false;
+  }
+  if (!salvarDados()) {
+    estado.historico = historicoAnterior;
+    estado.gastos = gastosAnteriores;
+    estado.ganhos = ganhosAnteriores;
+    return false;
+  }
   atualizarInterface();
   alert('Mês fechado! Gastos e ganhos fixos, além de parcelas ativas, já estão prontos para o novo mês.');
+  return true;
 }
 
 function registrarServiceWorker() {
@@ -149,8 +145,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   DOM.inputSalario.addEventListener('input', (e) => {
     const valor = parseFloat(e.target.value);
+    const salarioAnterior = estado.salario;
     estado.salario = !isNaN(valor) && valor >= 0 ? valor : 0;
-    salvarDados();
+    if (!salvarDados()) {
+      estado.salario = salarioAnterior;
+      e.target.value = salarioAnterior || '';
+      return;
+    }
     atualizarInterface();
   });
 
@@ -179,6 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   DOM.btnFecharMes.addEventListener('click', fecharMes);
+  window.addEventListener('fuelcount:estado-alterado', atualizarInterface);
 
   DOM.seletorMes.addEventListener('change', (e) => {
     definirMesEmVisualizacao(e.target.value);

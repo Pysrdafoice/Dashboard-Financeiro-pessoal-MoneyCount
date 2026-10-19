@@ -19,7 +19,7 @@ export function salvarDados() {
         detail: {
           permanente: false,
           mensagem:
-            'Não foi possível salvar no navegador. As alterações ficam apenas nesta sessão; exporte um backup antes de sair.',
+            'Não foi possível salvar no navegador. A alteração foi desfeita; tente novamente ou exporte um backup.',
         },
       }),
     );

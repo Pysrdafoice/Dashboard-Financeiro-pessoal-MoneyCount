@@ -32,6 +32,19 @@ function mesHistoricoValido(mes) {
   return numeroMes >= 1 && numeroMes <= 12;
 }
 
+function dataISOValida(data) {
+  if (typeof data !== 'string') return false;
+  const correspondencia = /^(\d{4})-(\d{2})-(\d{2})$/.exec(data);
+  if (!correspondencia) return false;
+  const ano = Number(correspondencia[1]);
+  const mes = Number(correspondencia[2]);
+  const dia = Number(correspondencia[3]);
+  if (mes < 1 || mes > 12) return false;
+  const bissexto = ano % 4 === 0 && (ano % 100 !== 0 || ano % 400 === 0);
+  const diasPorMes = [31, bissexto ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return dia >= 1 && dia <= diasPorMes[mes - 1];
+}
+
 function normalizarTransacoes(itens) {
   if (!Array.isArray(itens)) return [];
   return itens
@@ -41,7 +54,7 @@ function normalizarTransacoes(itens) {
         typeof item === 'object' &&
         !Array.isArray(item) &&
         Number.isFinite(item.valor) &&
-        item.valor > 0,
+        item.valor >= 0,
     )
     .map((item, indice) => ({
       ...item,
@@ -52,6 +65,7 @@ function normalizarTransacoes(itens) {
       descricao:
         typeof item.descricao === 'string' ? item.descricao : 'Sem descrição',
       categoria: typeof item.categoria === 'string' ? item.categoria : 'Outros',
+      data: dataISOValida(item.data) ? item.data : undefined,
     }));
 }
 

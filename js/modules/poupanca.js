@@ -17,15 +17,15 @@ export function registrarMovimentoPoupanca() {
 
   if (isNaN(valor) || valor <= 0) {
     alert('Digite um valor válido, maior que zero.');
-    return;
+    return false;
   }
 
   if (tipo === 'retirada' && valor > calcularSaldoPoupanca(estado.poupanca)) {
     alert('Você não pode retirar mais do que tem guardado.');
-    return;
+    return false;
   }
 
-  estado.poupanca.push({
+  const movimento = {
     id: crypto.randomUUID
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random()}`,
@@ -33,17 +33,27 @@ export function registrarMovimentoPoupanca() {
     valor: valor,
     descricao: descricao || (tipo === 'deposito' ? 'Depósito' : 'Retirada'),
     data: new Date().toISOString(),
-  });
+  };
+  estado.poupanca.push(movimento);
 
-  salvarDados();
+  if (!salvarDados()) {
+    estado.poupanca.pop();
+    return false;
+  }
   renderizarPoupanca();
   DOM.formPoupanca.reset();
+  return true;
 }
 
 export function removerMovimentoPoupanca(id) {
+  const movimentosAntes = estado.poupanca;
   estado.poupanca = estado.poupanca.filter((mov) => mov.id !== id);
-  salvarDados();
+  if (!salvarDados()) {
+    estado.poupanca = movimentosAntes;
+    return false;
+  }
   renderizarPoupanca();
+  return true;
 }
 
 export function atualizarSaldoLivre() {

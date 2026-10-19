@@ -17,7 +17,9 @@ Documentação do código JavaScript do aplicativo de orçamento financeiro. O d
 2. Os módulos leem e mutam o objeto compartilhado exportado por `estado.js`.
 3. Após ações que alteram dados, `app.js` chama `atualizarInterface()`.
 4. Cada módulo renderiza sua própria área; `calculos.js` concentra as regras sem acesso ao DOM.
-5. O fechamento do mês grava o histórico e retém apenas gastos e ganhos recorrentes.
+5. O fechamento do mês grava o histórico e retém apenas gastos e ganhos recorrentes; fechar novamente um mês já registrado não reaplica a transição nem decrementa parcelas.
+6. Lançamentos com data em mês passado só são aceitos quando existe um registro de histórico editável para esse mês. Sem histórico, o lançamento é cancelado com aviso; use uma data do mês atual.
+7. Se a gravação local falhar, a mutação é desfeita e a interface informa a falha, evitando mostrar como concluída uma alteração que não foi persistida.
 
 ## Páginas legais, autenticação e instalação
 

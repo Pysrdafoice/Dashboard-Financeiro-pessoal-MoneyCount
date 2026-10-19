@@ -4,7 +4,12 @@
 // IMPORTANTE: sempre que a lista de arquivos mudar, incremente
 // CACHE_VERSION. Sem isso, navegadores que já visitaram o site continuam
 // servindo a versão antiga do cache, e as mudanças não aparecem.
-const CACHE_VERSION = 'fuelcount-v3';
+const CACHE_VERSION = 'fuelcount-v4';
+const ORIGENS_EXTERNAS_PERMITIDAS = new Set([
+  'https://cdn.jsdelivr.net',
+  'https://fonts.googleapis.com',
+  'https://fonts.gstatic.com',
+]);
 
 const ARQUIVOS_DO_APP = [
   './',
@@ -16,11 +21,14 @@ const ARQUIVOS_DO_APP = [
   './icons/icon-192.svg',
   './icons/icon-512.svg',
   './chart.min.js',
+  './service-worker.js',
+  './js/services/serviceworker.js',
 
   './js/app.js',
   './js/estado.js',
   './js/persistencia.js',
   './js/calculos.js',
+  './js/modules/meses.js',
   './js/ui/dom.js',
   './js/ui/utils.js',
   './js/config/supabase.js',
@@ -76,7 +84,13 @@ self.addEventListener('fetch', (evento) => {
   const requisicao = evento.request;
   if (requisicao.method !== 'GET') return;
 
-  const mesmaOrigem = new URL(requisicao.url).origin === self.location.origin;
+  const url = new URL(requisicao.url);
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+  if (url.hostname === 'supabase.co' || url.hostname.endsWith('.supabase.co')) {
+    return;
+  }
+
+  const mesmaOrigem = url.origin === self.location.origin;
 
   if (mesmaOrigem) {
     // Arquivos do app: rede primeiro (pra pegar atualizações), cache como
@@ -90,15 +104,17 @@ self.addEventListener('fetch', (evento) => {
         })
         .catch(() => caches.match(requisicao)),
     );
-  } else {
-    // Recursos externos (Chart.js, Google Fonts, Supabase): cache primeiro,
-    // já que raramente mudam.
+  } else if (ORIGENS_EXTERNAS_PERMITIDAS.has(url.origin)) {
+    // Só recursos estáticos conhecidos entram no cache externo. Chamadas de
+    // autenticação/dados do Supabase permanecem fora do Service Worker.
     evento.respondWith(
       caches.match(requisicao).then((emCache) => {
         if (emCache) return emCache;
         return fetch(requisicao).then((resposta) => {
-          const copia = resposta.clone();
-          caches.open(CACHE_VERSION).then((cache) => cache.put(requisicao, copia));
+          if (resposta.ok || resposta.type === 'opaque') {
+            const copia = resposta.clone();
+            caches.open(CACHE_VERSION).then((cache) => cache.put(requisicao, copia));
+          }
           return resposta;
         });
       }),

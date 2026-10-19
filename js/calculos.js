@@ -43,6 +43,19 @@ export function formatarDataISO(data) {
   return `${ano}-${mes}-${dia}`;
 }
 
+export function ehDataISOValida(dataISO) {
+  if (typeof dataISO !== 'string') return false;
+  const correspondencia = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dataISO);
+  if (!correspondencia) return false;
+  const ano = Number(correspondencia[1]);
+  const mes = Number(correspondencia[2]);
+  const dia = Number(correspondencia[3]);
+  if (mes < 1 || mes > 12) return false;
+  const bissexto = ano % 4 === 0 && (ano % 100 !== 0 || ano % 400 === 0);
+  const diasPorMes = [31, bissexto ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return dia >= 1 && dia <= diasPorMes[mes - 1];
+}
+
 /** "2026-08-05" -> "05/08/2026". Retorna '' se a data estiver ausente/inválida. */
 export function formatarDataBR(dataISO) {
   if (typeof dataISO !== 'string') return '';
@@ -146,6 +159,24 @@ export function filtrarGastosAposFechamento(gastos) {
 
 export function filtrarGanhosAposFechamento(ganhos) {
   return ganhos.filter((ganho) => ganho.tipo === 'fixo');
+}
+
+export function fecharMesEstado(estado, nomeMes) {
+  if (estado.historico.some((entry) => entry.mes === nomeMes)) return false;
+
+  const { totalGastos, totalGanhosExtras, rendaTotal } = calcularTotais(estado);
+  estado.historico.push({
+    mes: nomeMes,
+    salario: estado.salario,
+    totalGanhosExtras,
+    rendaTotal,
+    totalGastos,
+    gastos: estado.gastos.map((gasto) => ({ ...gasto })),
+    ganhos: estado.ganhos.map((ganho) => ({ ...ganho })),
+  });
+  estado.gastos = filtrarGastosAposFechamento(estado.gastos);
+  estado.ganhos = filtrarGanhosAposFechamento(estado.ganhos);
+  return true;
 }
 
 export function registrarAtividadeStreak(streak, dataReferencia = new Date()) {

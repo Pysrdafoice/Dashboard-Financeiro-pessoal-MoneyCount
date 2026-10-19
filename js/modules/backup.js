@@ -2,8 +2,40 @@ import { estado, substituirEstado, normalizarEstado } from '../estado.js';
 import { DOM } from '../ui/dom.js';
 import { salvarDados } from '../persistencia.js';
 import { obterContextoVisivel } from './meses.js';
+import { ehDataISOValida } from '../calculos.js';
 
 let timerStatusBackup = null;
+
+export function escaparCampoCsv(valor) {
+  let texto = String(valor);
+  if (/^[=+\-@]/.test(texto)) texto = `'${texto}`;
+  if (/[;",\r\n]/.test(texto)) {
+    return `"${texto.replace(/"/g, '""')}"`;
+  }
+  return texto;
+}
+
+function ehTipoTransacaoValido(item) {
+  if (
+    item.tipo !== undefined &&
+    !['pontual', 'fixo', 'parcelado'].includes(item.tipo)
+  ) {
+    return false;
+  }
+
+  const temParcelas =
+    item.parcelasTotal !== undefined || item.parcelasRestantes !== undefined;
+  if (item.tipo === 'parcelado' || temParcelas) {
+    return (
+      Number.isInteger(item.parcelasTotal) &&
+      item.parcelasTotal >= 2 &&
+      Number.isInteger(item.parcelasRestantes) &&
+      item.parcelasRestantes >= 1 &&
+      item.parcelasRestantes <= item.parcelasTotal
+    );
+  }
+  return true;
+}
 
 function ehTransacoesValidas(transacoes) {
   return Array.isArray(transacoes) && transacoes.every((item) =>
@@ -11,7 +43,11 @@ function ehTransacoesValidas(transacoes) {
     typeof item === 'object' &&
     !Array.isArray(item) &&
     Number.isFinite(item.valor) &&
-    item.valor > 0,
+    item.valor >= 0 &&
+    (item.data === undefined || ehDataISOValida(item.data)) &&
+    ehTipoTransacaoValido(item) &&
+    (item.descricao === undefined || typeof item.descricao === 'string') &&
+    (item.categoria === undefined || typeof item.categoria === 'string'),
   );
 }
 
@@ -23,7 +59,9 @@ function ehHistoricoValido(historico) {
     if (mes < 1 || mes > 12) return false;
     if (
       !['salario', 'totalGanhosExtras', 'rendaTotal', 'totalGastos'].every(
-        (campo) => entry[campo] === undefined || Number.isFinite(entry[campo]),
+        (campo) =>
+          entry[campo] === undefined ||
+          (Number.isFinite(entry[campo]) && entry[campo] >= 0),
       )
     ) return false;
     if (entry.gastos !== undefined && !ehTransacoesValidas(entry.gastos)) return false;
@@ -34,19 +72,14 @@ function ehHistoricoValido(historico) {
 
 function ehBackupValido(dados) {
   if (!dados || typeof dados !== 'object' || Array.isArray(dados)) return false;
-  const camposConhecidos = [
-    'salario',
-    'gastos',
-    'ganhos',
-    'historico',
-    'limites',
-    'poupanca',
-    'streak',
-  ];
-  if (!camposConhecidos.some((campo) => Object.prototype.hasOwnProperty.call(dados, campo))) {
+  const camposDeDados = ['gastos', 'ganhos', 'historico', 'limites', 'poupanca'];
+  if (!camposDeDados.some((campo) => Object.prototype.hasOwnProperty.call(dados, campo))) {
     return false;
   }
-  if (dados.salario !== undefined && !Number.isFinite(dados.salario)) return false;
+  if (
+    dados.salario !== undefined &&
+    (!Number.isFinite(dados.salario) || dados.salario < 0)
+  ) return false;
   if (dados.gastos !== undefined && !ehTransacoesValidas(dados.gastos)) return false;
   if (dados.ganhos !== undefined && !ehTransacoesValidas(dados.ganhos)) return false;
   if (dados.historico !== undefined) {
@@ -59,13 +92,43 @@ function ehBackupValido(dados) {
       Array.isArray(dados.limites) ||
       Object.values(dados.limites).some((valor) => !Number.isFinite(valor) || valor <= 0))
   ) return false;
-  if (dados.poupanca !== undefined && !Array.isArray(dados.poupanca)) return false;
+  if (
+    dados.poupanca !== undefined &&
+    (!Array.isArray(dados.poupanca) ||
+      dados.poupanca.some(
+        (movimento) =>
+          !movimento ||
+          typeof movimento !== 'object' ||
+          Array.isArray(movimento) ||
+          !['deposito', 'retirada'].includes(movimento.tipo) ||
+          !Number.isFinite(movimento.valor) ||
+          movimento.valor <= 0 ||
+          (movimento.data !== undefined &&
+            (typeof movimento.data !== 'string' ||
+              !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(
+                movimento.data,
+              ) ||
+              !Number.isFinite(Date.parse(movimento.data)))),
+      ))
+  ) return false;
   if (
     dados.streak !== undefined &&
-    (!dados.streak || typeof dados.streak !== 'object' || Array.isArray(dados.streak))
+    (!dados.streak ||
+      typeof dados.streak !== 'object' ||
+      Array.isArray(dados.streak) ||
+      ['dias', 'melhorStreak'].some(
+        (campo) =>
+          dados.streak[campo] !== undefined &&
+          (!Number.isFinite(dados.streak[campo]) || dados.streak[campo] < 0),
+      ) ||
+      (dados.streak.ultimaData !== undefined &&
+        dados.streak.ultimaData !== null &&
+        !ehDataISOValida(dados.streak.ultimaData)))
   ) return false;
   return true;
 }
+
+export { ehBackupValido as validarBackup };
 
 function mostrarStatusBackup(mensagem, ehErro = false) {
   DOM.backupStatus.textContent = mensagem;
@@ -133,8 +196,17 @@ export function importarBackup(e) {
           return;
         }
 
+        const estadoAnterior = JSON.parse(JSON.stringify(estado));
         substituirEstado(normalizarEstado(dados));
-        salvarDados();
+        if (!salvarDados()) {
+          substituirEstado(estadoAnterior);
+          mostrarStatusBackup(
+            'Não foi possível salvar o backup neste navegador. Os dados anteriores foram mantidos.',
+            true,
+          );
+          resolve(false);
+          return;
+        }
         mostrarStatusBackup('Backup restaurado com sucesso!');
         resolve(true);
       } catch (err) {
@@ -177,28 +249,20 @@ export function exportarCsv() {
     return;
   }
 
-  const escapeCsv = (valor) => {
-    const texto = String(valor);
-    if (/[;",\r\n]/.test(texto)) {
-      return `"${texto.replace(/"/g, '""')}"`;
-    }
-    return texto;
-  };
-
   const cabecalho = ['Tipo', 'Descrição', 'Categoria', 'Data', 'Valor (R$)'];
   const linhas = [
     ...gastos.map((g) => [
       'Despesa',
-      escapeCsv(g.descricao),
-      escapeCsv(g.categoria),
-      escapeCsv(g.data || ''),
+      escaparCampoCsv(g.descricao),
+      escaparCampoCsv(g.categoria),
+      escaparCampoCsv(g.data || ''),
       g.valor.toFixed(2).replace('.', ','),
     ]),
     ...ganhos.map((g) => [
       'Receita',
-      escapeCsv(g.descricao),
-      escapeCsv(g.categoria),
-      escapeCsv(g.data || ''),
+      escaparCampoCsv(g.descricao),
+      escaparCampoCsv(g.categoria),
+      escaparCampoCsv(g.data || ''),
       g.valor.toFixed(2).replace('.', ','),
     ]),
   ];

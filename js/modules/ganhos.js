@@ -62,6 +62,8 @@ export function adicionarGanho() {
     data: data,
   };
 
+  const ganhosAntes = destino ? destino.ganhos.slice() : estado.ganhos.slice();
+  const streakAntes = { ...estado.streak };
   if (destino) {
     destino.ganhos.push(novoGanho);
     recalcularTotaisDoMes(destino);
@@ -69,23 +71,50 @@ export function adicionarGanho() {
     estado.ganhos.push(novoGanho);
     registrarAtividadeStreak(estado.streak);
   }
-  salvarDados();
+  if (!salvarDados()) {
+    if (destino) {
+      destino.ganhos = ganhosAntes;
+      recalcularTotaisDoMes(destino);
+    } else {
+      estado.ganhos = ganhosAntes;
+      Object.assign(estado.streak, streakAntes);
+    }
+    return false;
+  }
   DOM.formGanho.reset();
   return true;
 }
 
 export function removerGanho(id) {
   const entry = obterEntryEmVisualizacao();
+  const ganhosAntes = entry ? entry.ganhos : estado.ganhos;
+  const itensAntes = ganhosAntes.slice();
+  const agregadosAntes = entry
+    ? {
+        totalGastos: entry.totalGastos,
+        totalGanhosExtras: entry.totalGanhosExtras,
+        rendaTotal: entry.rendaTotal,
+      }
+    : null;
   if (entry) {
     entry.ganhos = entry.ganhos.filter((g) => g.id !== id);
     recalcularTotaisDoMes(entry);
   } else {
     estado.ganhos = estado.ganhos.filter((g) => g.id !== id);
   }
-  salvarDados();
+  if (!salvarDados()) {
+    if (entry) {
+      entry.ganhos = itensAntes;
+      Object.assign(entry, agregadosAntes);
+    } else {
+      estado.ganhos = itensAntes;
+    }
+    return false;
+  }
+  return true;
 }
 
-export function renderizarExtratoGanhos(atualizarInterface) {
+export function renderizarExtratoGanhos() {
   DOM.listaGanhos.innerHTML = '';
 
   const { ganhos } = obterContextoVisivel();
@@ -120,8 +149,9 @@ export function renderizarExtratoGanhos(atualizarInterface) {
     card
       .querySelector('.btn-remover-transacao')
       .addEventListener('click', () => {
-        removerGanho(ganho.id);
-        atualizarInterface();
+        if (removerGanho(ganho.id)) {
+          window.dispatchEvent(new Event('fuelcount:estado-alterado'));
+        }
       });
 
     DOM.listaGanhos.appendChild(card);

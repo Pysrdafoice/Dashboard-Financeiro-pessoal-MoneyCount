@@ -78,6 +78,8 @@ export function adicionarGasto() {
     novoGasto.parcelasTotal = parcelas;
   }
 
+  const gastosAntes = destino ? destino.gastos.slice() : estado.gastos.slice();
+  const streakAntes = { ...estado.streak };
   if (destino) {
     destino.gastos.push(novoGasto);
     recalcularTotaisDoMes(destino);
@@ -86,7 +88,16 @@ export function adicionarGasto() {
     // Lançamentos retroativos não contam para o streak — ele mede o hábito de anotar no dia.
     registrarAtividadeStreak(estado.streak);
   }
-  salvarDados();
+  if (!salvarDados()) {
+    if (destino) {
+      destino.gastos = gastosAntes;
+      recalcularTotaisDoMes(destino);
+    } else {
+      estado.gastos = gastosAntes;
+      Object.assign(estado.streak, streakAntes);
+    }
+    return false;
+  }
   DOM.formGasto.reset();
   DOM.parcelasGasto.classList.add('hidden');
   return true;
@@ -94,13 +105,30 @@ export function adicionarGasto() {
 
 export function removerGasto(id) {
   const entry = obterEntryEmVisualizacao();
+  const gastosAntes = entry ? entry.gastos : estado.gastos;
+  const itensAntes = gastosAntes.slice();
+  const agregadosAntes = entry
+    ? {
+        totalGastos: entry.totalGastos,
+        totalGanhosExtras: entry.totalGanhosExtras,
+        rendaTotal: entry.rendaTotal,
+      }
+    : null;
   if (entry) {
     entry.gastos = entry.gastos.filter((g) => g.id !== id);
     recalcularTotaisDoMes(entry);
   } else {
     estado.gastos = estado.gastos.filter((g) => g.id !== id);
   }
-  salvarDados();
+  if (!salvarDados()) {
+    if (entry) {
+      entry.gastos = itensAntes;
+      Object.assign(entry, agregadosAntes);
+    } else {
+      estado.gastos = itensAntes;
+    }
+    return false;
+  }
 
   const categoriaAtualModal = obterCategoriaAtualModal();
   if (!DOM.modalOverlay.classList.contains('hidden') && categoriaAtualModal) {
@@ -113,9 +141,10 @@ export function removerGasto(id) {
       abrirModalCategoria(categoriaAtualModal);
     }
   }
+  return true;
 }
 
-export function renderizarExtrato(atualizarInterface) {
+export function renderizarExtrato() {
   DOM.listaTransacoes.innerHTML = '';
 
   const { gastos } = obterContextoVisivel();
@@ -147,8 +176,9 @@ export function renderizarExtrato(atualizarInterface) {
     card
       .querySelector('.btn-remover-transacao')
       .addEventListener('click', () => {
-        removerGasto(gasto.id);
-        atualizarInterface();
+        if (removerGasto(gasto.id)) {
+          window.dispatchEvent(new Event('fuelcount:estado-alterado'));
+        }
       });
 
     DOM.listaTransacoes.appendChild(card);

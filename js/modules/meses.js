@@ -76,12 +76,23 @@ export function dataPadraoLancamento(dataReferencia = new Date()) {
  * Decide para onde um gasto/ganho com determinada data vai:
  *  - se existe um mês fechado com essa chave, ele é o destino (mesmo que o
  *    seletor não esteja nele);
- *  - senão, o destino é o mês atual (retorna null).
+ *  - sem histórico, só uma data do mês atual pode seguir para o estado atual;
+ *    meses anteriores são cancelados para evitar registrar no mês errado.
  * Lança um erro legível quando o mês fechado não pode receber itens.
  */
 export function resolverDestinoLancamento(dataISO) {
-  const entry = encontrarEntryHistorico(mesChaveDaData(dataISO));
-  if (!entry) return null;
+  const chaveDestino = mesChaveDaData(dataISO);
+  const entry = encontrarEntryHistorico(chaveDestino);
+  if (!entry) {
+    const hoje = new Date();
+    const chaveAtual = `${hoje.getMonth() + 1}/${hoje.getFullYear()}`;
+    if (parseMesChave(chaveDestino).ordem < parseMesChave(chaveAtual).ordem) {
+      throw new Error(
+        'Não há histórico disponível para o mês desta data. O lançamento foi cancelado; use uma data do mês atual.',
+      );
+    }
+    return null;
+  }
   if (!entryHistoricoEditavel(entry)) {
     throw new Error(
       `O mês ${entry.mes} foi fechado antes do registro detalhado de itens e não pode receber novos lançamentos.`,
