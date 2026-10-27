@@ -4,9 +4,8 @@
 // IMPORTANTE: sempre que a lista de arquivos mudar, incremente
 // CACHE_VERSION. Sem isso, navegadores que já visitaram o site continuam
 // servindo a versão antiga do cache, e as mudanças não aparecem.
-const CACHE_VERSION = 'fuelcount-v4';
+const CACHE_VERSION = 'fuelcount-v5';
 const ORIGENS_EXTERNAS_PERMITIDAS = new Set([
-  'https://cdn.jsdelivr.net',
   'https://fonts.googleapis.com',
   'https://fonts.gstatic.com',
 ]);
@@ -105,8 +104,8 @@ self.addEventListener('fetch', (evento) => {
         .catch(() => caches.match(requisicao)),
     );
   } else if (ORIGENS_EXTERNAS_PERMITIDAS.has(url.origin)) {
-    // Só recursos estáticos conhecidos entram no cache externo. Chamadas de
-    // autenticação/dados do Supabase permanecem fora do Service Worker.
+    // Apenas fontes externas conhecidas são cacheadas; CDN de módulos,
+    // Supabase e outras origens seguem o fluxo normal do navegador.
     evento.respondWith(
       caches.match(requisicao).then((emCache) => {
         if (emCache) return emCache;

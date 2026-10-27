@@ -27,6 +27,7 @@ Documentação do código JavaScript do aplicativo de orçamento financeiro. O d
 - A recuperação de senha usa o fluxo de e-mail do Supabase Auth. Configure a URL do site e permita a origem publicada na lista de redirecionamentos do Supabase.
 - `service-worker.js` é o ponto de entrada no escopo raiz; ele carrega `js/services/serviceworker.js` e mantém os recursos locais do app disponíveis offline após a primeira visita.
 - `manifest.json` e os SVGs em `icons/` fornecem os metadados e ícones da instalação PWA. Sirva o projeto por HTTPS ou por `localhost` para que o Service Worker possa ser registrado.
+- Após a atualização do Service Worker em produção, talvez seja necessário recarregar a página com o cache limpo uma vez. Se a atualização não for aplicada, abra DevTools → Application → Service Workers e selecione **Unregister**; o novo worker assume imediatamente nas visitas seguintes.
 
 ## Documentação original dos arquivos
 
